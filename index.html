@@ -1,0 +1,636 @@
+<title>Bet Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#f4f6f3; --surface:#ffffff; --surface-2:#f0f2ee; --raised:#ffffff;
+    --ink:#161d18; --ink-2:#4c5751; --ink-3:#7c877f;
+    --border:#e0e5df; --border-2:#cdd4cc;
+    --accent:#1c7a4b; --accent-ink:#ffffff; --accent-soft:#e4f2ea;
+    --market:#0e7ca0; --market-soft:#e0f2f8; --market-ink:#0a5c78;
+    --model:#b8600a; --model-soft:#fbeddb; --model-ink:#8a4707;
+    --pos:#1c7a4b; --neg:#b42318; --warn:#b8600a;
+    --shadow:0 1px 2px rgba(16,29,22,.06),0 4px 14px rgba(16,29,22,.05);
+    --shadow-lift:0 2px 6px rgba(16,29,22,.10),0 10px 28px rgba(16,29,22,.10);
+    --r:10px; --r-sm:7px; --r-lg:16px;
+    --f-disp:"Barlow Semi Condensed",system-ui,sans-serif;
+    --f-body:"IBM Plex Sans",system-ui,sans-serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1210; --surface:#141b17; --surface-2:#101613; --raised:#1a221d;
+      --ink:#e9efe9; --ink-2:#a3b0a7; --ink-3:#6f7c73;
+      --border:#242e28; --border-2:#33403a;
+      --accent:#33c47a; --accent-ink:#052012; --accent-soft:#12281c;
+      --market:#3fc0e6; --market-soft:#0c2530; --market-ink:#8fd9ef;
+      --model:#f2a94e; --model-soft:#2c1e0e; --model-ink:#f7c98a;
+      --pos:#33c47a; --neg:#f2705f; --warn:#f2a94e;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.5),0 14px 34px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1210; --surface:#141b17; --surface-2:#101613; --raised:#1a221d;
+    --ink:#e9efe9; --ink-2:#a3b0a7; --ink-3:#6f7c73;
+    --border:#242e28; --border-2:#33403a;
+    --accent:#33c47a; --accent-ink:#052012; --accent-soft:#12281c;
+    --market:#3fc0e6; --market-soft:#0c2530; --market-ink:#8fd9ef;
+    --model:#f2a94e; --model-soft:#2c1e0e; --model-ink:#f7c98a;
+    --pos:#33c47a; --neg:#f2705f; --warn:#f2a94e;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.5),0 14px 34px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);
+    font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 20px 64px}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 22px;
+    padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:20px}
+  .brand{display:flex;flex-direction:column;gap:2px;margin-right:auto}
+  .brand .kicker{font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--market);font-weight:500}
+  .brand h1{font-family:var(--f-disp);font-weight:700;font-size:34px;line-height:.98;
+    margin:2px 0 0;letter-spacing:-.01em;text-wrap:balance}
+  .brand .sub{color:var(--ink-2);font-size:13.5px;max-width:52ch}
+  .head-actions{display:flex;align-items:center;gap:10px}
+  .updated{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+    text-align:right;line-height:1.35}
+  .updated b{color:var(--ink-2);font-weight:500}
+
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .btn-pull{display:inline-flex;align-items:center;gap:9px;background:var(--accent);
+    color:var(--accent-ink);font-weight:600;font-size:14px;padding:11px 16px;
+    border-radius:var(--r);box-shadow:var(--shadow);transition:transform .12s ease,filter .12s ease}
+  .btn-pull:hover{filter:brightness(1.05)}
+  .btn-pull:active{transform:translateY(1px)}
+  .btn-pull svg{width:16px;height:16px}
+  .icon-btn{width:38px;height:38px;border-radius:var(--r);border:1px solid var(--border);
+    background:var(--surface);display:grid;place-items:center;color:var(--ink-2);
+    box-shadow:var(--shadow);transition:color .12s}
+  .icon-btn:hover{color:var(--ink)}
+  .icon-btn svg{width:17px;height:17px}
+
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-bottom:16px}
+  .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:var(--r);padding:3px;gap:2px}
+  .seg button{font-size:13px;font-weight:500;padding:6px 13px;border-radius:var(--r-sm);
+    color:var(--ink-2);letter-spacing:.01em}
+  .seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);
+    box-shadow:var(--shadow);font-weight:600}
+  .seg button.locked{color:var(--ink-3);cursor:not-allowed;position:relative}
+  .seg button.locked::after{content:"soon";position:absolute;top:-7px;right:-4px;
+    font-family:var(--f-mono);font-size:8px;letter-spacing:.05em;background:var(--model);
+    color:#fff;padding:1px 4px;border-radius:6px;line-height:1.2}
+  .seg-label{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-3);align-self:center}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:13px 15px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .kpi .lab{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-3)}
+  .kpi .val{font-family:var(--f-disp);font-weight:700;font-size:32px;line-height:1;
+    margin-top:7px;font-variant-numeric:tabular-nums}
+  .kpi .note{font-size:12px;color:var(--ink-2);margin-top:3px}
+  .kpi.market .val{color:var(--market)} .kpi.market{border-top:2px solid var(--market)}
+  .kpi.model .val{color:var(--model)} .kpi.model{border-top:2px solid var(--model)}
+  .kpi.edge .val{color:var(--accent)}
+
+  .banner{display:flex;gap:11px;align-items:flex-start;background:var(--market-soft);
+    border:1px solid color-mix(in srgb,var(--market) 30%,transparent);
+    border-radius:var(--r);padding:11px 14px;margin-bottom:18px;font-size:13px;color:var(--market-ink)}
+  .banner svg{width:17px;height:17px;flex:0 0 auto;margin-top:1px}
+  .banner b{font-weight:600}
+
+  .board{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    box-shadow:var(--shadow);overflow:hidden}
+  .board-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:1000px}
+  thead th{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-3);font-weight:500;text-align:left;
+    padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);
+    white-space:nowrap}
+  thead th.num{text-align:right}
+  tbody td{padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr{transition:background .12s}
+  tbody tr:hover{background:var(--surface-2)}
+  .rank{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);width:26px;
+    text-align:right;font-variant-numeric:tabular-nums}
+
+  .game{display:flex;flex-direction:column;gap:4px;min-width:158px}
+  .teams{font-family:var(--f-disp);font-weight:600;font-size:17px;line-height:1.05;
+    letter-spacing:.005em}
+  .teams .at{color:var(--ink-3);font-weight:500;font-size:12px;padding:0 4px}
+  .gmeta{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .lg{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.08em;font-weight:600;
+    padding:1px 6px;border-radius:5px;border:1px solid var(--border-2);color:var(--ink-2)}
+  .lg.CFB{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+  .lg.NFL{color:#1a5fb4;border-color:color-mix(in srgb,#1a5fb4 40%,transparent)}
+  .kick{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+  .cues{display:flex;flex-wrap:wrap;gap:4px}
+  .cue{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.02em;color:var(--model-ink);
+    background:var(--model-soft);border:1px solid color-mix(in srgb,var(--model) 25%,transparent);
+    padding:1px 6px;border-radius:5px}
+  .tv{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:11px;
+    font-weight:600;color:var(--ink);background:var(--surface-2);border:1px solid var(--border-2);
+    padding:3px 9px;border-radius:6px;white-space:nowrap}
+  .tv-pend{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+  .toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;
+    padding:7px 13px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);
+    color:var(--ink-2);box-shadow:var(--shadow);transition:background .12s,color .12s,border-color .12s}
+  .toggle[aria-pressed="true"]{background:var(--market);border-color:var(--market);color:#fff;font-weight:600}
+
+  .line{font-family:var(--f-mono);font-weight:500;font-size:15px;
+    font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;display:inline-block}
+  .line .tot{display:block;font-size:11px;color:var(--ink-3);font-weight:400;margin-top:2px}
+  .pending-line{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);text-align:right;display:inline-block}
+  td.numcell{text-align:right}
+
+  .sar-in{font-family:var(--f-mono);font-weight:600;font-size:15px;width:70px;
+    text-align:right;padding:6px 8px;border:1px solid var(--border-2);border-radius:var(--r-sm);
+    background:var(--surface-2);color:var(--ink);font-variant-numeric:tabular-nums;
+    transition:border-color .12s,box-shadow .12s}
+  .sar-in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .sar-in::placeholder{color:var(--ink-3);font-weight:400}
+  .sar-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+  .sar-tag{font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+
+  .soft{display:flex;flex-direction:column;gap:6px;min-width:150px}
+  .softtop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);
+    font-size:10.5px;font-weight:600;letter-spacing:.03em;padding:3px 8px;border-radius:20px;
+    white-space:nowrap;text-transform:uppercase}
+  .chip.market{background:var(--market-soft);color:var(--market-ink)}
+  .chip.model{background:var(--model-soft);color:var(--model-ink)}
+  .chip.dim{background:var(--surface-2);color:var(--ink-3);font-weight:500}
+  .chip.pend{background:transparent;border:1px dashed var(--border-2);color:var(--ink-3);font-weight:500}
+  .chip .dot{width:7px;height:7px;border-radius:50%}
+  .chip.market .dot{background:var(--market)} .chip.model .dot{background:var(--model)}
+  .gapval{font-family:var(--f-mono);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .gapval.market{color:var(--market)} .gapval.model{color:var(--model)}
+  .gapval.dim{color:var(--ink-3);font-weight:400}
+  .bar{height:6px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+  .bar>span{display:block;height:100%;border-radius:4px;transition:width .25s ease}
+  .bar.market>span{background:var(--market)} .bar.model>span{background:var(--model)}
+  .lean{font-size:11.5px;color:var(--ink-2)}
+  .lean b{font-weight:600;color:var(--ink)}
+  .emptyrow{padding:34px 16px;text-align:center;color:var(--ink-3);font-size:13.5px}
+
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+  .lcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:15px 17px;box-shadow:var(--shadow)}
+  .lcard.market{border-left:3px solid var(--market)}
+  .lcard.model{border-left:3px solid var(--model)}
+  .lcard h3{font-family:var(--f-disp);font-weight:600;font-size:18px;margin:0 0 4px;
+    display:flex;align-items:center;gap:8px}
+  .lcard h3 .dot{width:9px;height:9px;border-radius:50%}
+  .lcard.market h3 .dot{background:var(--market)} .lcard.model h3 .dot{background:var(--model)}
+  .lcard p{margin:0;font-size:13px;color:var(--ink-2)}
+  .lcard code{font-family:var(--f-mono);font-size:12px;background:var(--surface-2);
+    padding:1px 5px;border-radius:5px;color:var(--ink)}
+  .foot{margin-top:22px;font-size:12px;color:var(--ink-3);text-align:center;line-height:1.6}
+  .foot b{color:var(--ink-2);font-weight:500}
+
+  .lines{display:flex;flex-direction:column;gap:5px;align-items:flex-end;min-width:118px}
+  .mkt-line{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+  .mkt-line.pend{color:var(--ink-3)}
+  .ll{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .sar-line{display:flex;align-items:center;gap:5px}
+  .sar-line .sar-in{width:60px;font-size:14px;padding:5px 7px}
+  .signals{display:flex;flex-direction:column;gap:5px;min-width:118px}
+  .sig{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;color:var(--ink-3);white-space:nowrap}
+  .sig-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;opacity:.3}
+  .sig-dot.market{background:var(--market)} .sig-dot.model{background:var(--model)}
+  .sig.on .sig-dot{opacity:1}
+  .sig.on.market{color:var(--market-ink)} .sig.on.model{color:var(--model-ink)}
+  .sig b{font-variant-numeric:tabular-nums;font-weight:600}
+  .bet{font-size:13px;line-height:1.42;color:var(--ink);max-width:33ch;min-width:200px}
+  .bet.na{color:var(--ink-3)} .bet.skip{color:var(--model-ink)} .bet.ml{color:var(--ink-2)}
+  .bet b{font-weight:600}
+  .conf{display:inline-block;font-family:var(--f-mono);font-weight:600;font-size:14px;padding:5px 11px;border-radius:20px;font-variant-numeric:tabular-nums}
+  .conf.lo{background:var(--surface-2);color:var(--ink-2)}
+  .conf.mid{background:var(--market-soft);color:var(--market-ink)}
+  .conf.hi{background:var(--accent-soft);color:var(--accent)}
+  .conf-na{color:var(--ink-3);font-family:var(--f-mono)}
+  .an-toggle{font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;color:var(--market);background:none;border:1px solid var(--border-2);padding:2px 8px;border-radius:5px;margin-top:3px;align-self:flex-start;cursor:pointer;transition:border-color .12s,color .12s}
+  .an-toggle:hover{border-color:var(--market)}
+  tr.detail>td{background:var(--surface-2);padding:0;border-bottom:1px solid var(--border)}
+  .an{padding:16px 18px 18px;display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .an-tbl{border-collapse:collapse;font-size:12.5px}
+  .an-tbl th{font-family:var(--f-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 18px 6px 0;font-weight:500;border-bottom:1px solid var(--border)}
+  .an-tbl td{padding:6px 18px 6px 0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+  .an-team{font-family:var(--f-disp)!important;font-weight:600;font-size:15px}
+  .an-rt{color:var(--ink-3);font-size:10.5px;margin-left:3px}
+  .an-read{flex:1;min-width:280px;max-width:56ch}
+  .an-read p{margin:0 0 9px;font-size:13px;color:var(--ink-2);line-height:1.55}
+  .an-read p:last-child{margin-bottom:0}
+  .an-read b{color:var(--ink);font-weight:600}
+  .an-prof{font-size:12.5px!important;color:var(--ink-2)!important;font-family:var(--f-mono);letter-spacing:-.1px}
+  .an-note{font-size:13px;color:var(--ink-2);line-height:1.55;max-width:70ch}
+  .an-note b{color:var(--ink);font-weight:600}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--bg);font-size:13.5px;font-weight:500;
+    padding:12px 18px;border-radius:var(--r);box-shadow:var(--shadow-lift);
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:90vw;
+    display:flex;align-items:center;gap:9px;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast svg{width:16px;height:16px;flex:0 0 auto}
+
+  @media (max-width:720px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .legend{grid-template-columns:1fr}
+    .brand h1{font-size:28px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Bet Analysis</h1>
+      <span class="sub">SP+ matchup analysis for every game — who’s better on each side of the ball, a projected margin, and the pick against the spread. Click a game to see the breakdown.</span>
+    </div>
+    <div class="head-actions">
+      <div class="updated">saracen lines<br><b id="stamp">—</b></div>
+      <button class="icon-btn" id="theme" title="Toggle light / dark" aria-label="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <button class="btn-pull" id="pull">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        Update
+      </button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="tablist" aria-label="League" id="leagueSeg">
+      <button role="tab" aria-selected="true" data-lg="ALL">All</button>
+      <button role="tab" aria-selected="false" data-lg="NFL">NFL</button>
+      <button role="tab" aria-selected="false" data-lg="CFB">College</button>
+    </div>
+    <span class="seg-label">Market</span>
+    <div class="seg" role="tablist" aria-label="Bet type" id="betSeg">
+      <button role="tab" aria-selected="true" data-bet="spread">Spread</button>
+      <button role="tab" aria-selected="false" data-bet="total">Total</button>
+      <button class="locked" data-bet="ml" tabindex="-1">Moneyline</button>
+      <button class="locked" data-bet="props" tabindex="-1">Props</button>
+      <button class="locked" data-bet="parlay" tabindex="-1">Parlay</button>
+    </div>
+    <span class="seg-label">Day</span>
+    <div class="seg" role="tablist" aria-label="Day" id="daySeg">
+      <button role="tab" aria-selected="true" data-day="ALL">All</button>
+      <button role="tab" aria-selected="false" data-day="Fri">Fri</button>
+      <button role="tab" aria-selected="false" data-day="Sat">Sat</button>
+      <button role="tab" aria-selected="false" data-day="Sun">Sun</button>
+      <button role="tab" aria-selected="false" data-day="Mon">Mon</button>
+    </div>
+    <button id="tvOnly" class="toggle" aria-pressed="false" title="Show only games on TV or the ESPN app">📺 On TV / ESPN</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="banner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    <span><b>Every game analyzed on SP+ offense-vs-defense, then priced against Saracen.</b> The <b>Bet</b> column is the pick against the spread (or a moneyline when the spread is efficient); hit <b>▸ analysis</b> on any game for the scouting report — rush-vs-pass matchups, projected margin, and a projected total (the <b>Total</b> tab now grades over/unders too). 🔵 <b>Market Soft</b> / 🟠 <b>Model Soft</b> flag where Saracen disagrees with the market or the stats. It’s early, so SP+ still leans on preseason data — treat big-blowout edges cautiously.</span>
+  </div>
+
+  <div class="board">
+    <div class="board-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th>Game</th>
+            <th>TV / Stream</th>
+            <th class="num">Lines</th>
+            <th>Signals</th>
+            <th>The Bet — in plain words</th>
+            <th class="num">Confidence</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="lcard market">
+      <h3><span class="dot"></span>Market Soft</h3>
+      <p>Saracen’s number is off the <b>national market consensus</b> (DraftKings, FanDuel, BetMGM, Caesars…). A small regional book moves slower, so a gap here means Saracen is behind where the sharp market has settled. <code>|Saracen − consensus|</code>, flagged at <code>≥ 1.0 pt</code> spread. <b>Connect the Odds API key to activate.</b></p>
+    </div>
+    <div class="lcard model">
+      <h3><span class="dot"></span>Model Soft</h3>
+      <p>The line is off what the <b>game’s stats</b> say — the “emotional, not statistical” play. Model line comes from power ratings (SP+ for college, EPA for NFL) adjusted for marquee-team, recency, and rivalry bias. <code>|line − model|</code>. Model line = <code>(SP+ gap) + 2.4 home edge</code>. <b>Early-season fade on</b> — needs a wider stat gap to flag now, easing toward Week 5. <b>Engine wired; activates with the CFBD key.</b></p>
+    </div>
+  </div>
+
+  <p class="foot">
+    <b>Rank</b> = Market gap + Model gap once both feeds are live. Bigger combined disagreement sits on top.<br>
+    Research layer only — you place every bet yourself in the Saracen app. Bet only what you can afford to lose.
+  </p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Real Bet Saracen college spreads pulled 2026-09-04. home = FAVORITE (negative spread),
+  // away = underdog. spread(consensus)/total/model = null until the feeds are wired.
+  const GAMES = [
+    {lg:"CFB",away:"Oregon State",home:"Houston",fav:"Houston",dog:"Oregon State",kick:"Sat 11:00a",sar:-20.5,cons:-21,total:50.5,model:-15.5,tModel:50.5,tv:"ESPN",cues:[],fOff:30.9,fOffR:34,fDef:23.1,fDefR:46,dOff:21.2,dOffR:101,dDef:26.1,dDefR:69,advF:[-0.03,0.35,1.23,0.05,0.21,0.162],advD:[0.01,0.11,1.05,0.07,0.31,0.172]},
+    {lg:"CFB",away:"North Texas",home:"Indiana",fav:"Indiana",dog:"North Texas",kick:"Sat 11:00a",sar:-40,cons:-40.5,total:56,model:-40.0,tModel:54.5,tv:"FOX",cues:[],fOff:37.8,fOffR:7,fDef:12.5,fDefR:4,dOff:23.7,dOffR:88,dDef:35,dDefR:121,advF:[0.19,0.52,1.18,-0.09,0.2,0.232],advD:[0.33,0.43,1.33,0.18,0.21,0.137]},
+    {lg:"CFB",away:"East Carolina",home:"Alabama",fav:"Alabama",dog:"East Carolina",kick:"Sat 11:00a",sar:-28,cons:-28,total:52.5,model:-22.5,tModel:47.0,tv:"ABC",cues:["marquee"],fOff:31,fOffR:32,fDef:13,fDefR:6,dOff:24.1,dOffR:85,dDef:26.3,dDefR:73,advF:[0.02,0.35,1.27,0.1,0.11,0.177],advD:[0.09,0.37,1.18,0.02,0.17,0.191]},
+    {lg:"CFB",away:"Ball State",home:"Ohio State",fav:"Ohio State",dog:"Ball State",kick:"Sat 11:30a",sar:-49.5,cons:-50.5,total:56.5,model:-60.0,tModel:49.0,tv:"BTN",cues:["marquee"],fOff:41.0,fOffR:2,fDef:8.4,fDefR:1,dOff:12.2,dOffR:135,dDef:36.7,dDefR:129,advF:[0.08,0.54,1.16,-0.09,0.05,0.163],advD:[0.03,-0.03,1.31,0.16,0.3,0.14]},
+    {lg:"CFB",away:"Tennessee State",home:"Georgia",fav:"Georgia",dog:"Tennessee State",kick:"Sat 2:00p",sar:-47,cons:-47.5,total:54.5,model:null,tModel:null,tv:"SECN+",cues:["marquee"],fOff:38.7,fOffR:5,fDef:12.9,fDefR:5,dOff:null,dOffR:null,dDef:null,dDefR:null,advF:[0.16,0.36,1.15,-0.01,0.23,0.151],advD:null},
+    {lg:"CFB",away:"Marshall",home:"Penn State",fav:"Penn State",dog:"Marshall",kick:"Sat 2:30p",sar:-23,cons:-23.5,total:52,model:-27.0,tModel:58.0,tv:"FS1",cues:["marquee"],fOff:33.9,fOffR:14,fDef:18.3,fDefR:22,dOff:27.6,dOffR:60,dDef:36,dDefR:127,advF:[0.21,0.28,1.2,0.11,0.18,0.159],advD:[0.05,0.38,1.16,0.04,0.33,0.157]},
+    {lg:"CFB",away:"Boise State",home:"Oregon",fav:"Oregon",dog:"Boise State",kick:"Sat 2:30p",sar:-24.5,cons:-24.5,total:51.5,model:-26.5,tModel:53.0,tv:"CBS",cues:["marquee"],fOff:41.1,fOffR:1,fDef:12.2,fDefR:2,dOff:29,dOffR:49,dDef:23.7,dDefR:51,advF:[0.23,0.42,1.32,0.05,0.15,0.182],advD:[0.16,0.27,1.28,0.2,0.08,0.166]},
+    {lg:"CFB",away:"Texas State",home:"Texas",fav:"Texas",dog:"Texas State",kick:"Sat 2:30p",sar:-29.5,cons:-29.5,total:59.5,model:-27.5,tModel:60.5,tv:"ESPN",cues:["marquee"],fOff:37.3,fOffR:9,fDef:14.9,fDefR:10,dOff:33.2,dOffR:16,dDef:35.4,dDefR:124,advF:[0.08,0.29,1.37,0.01,0.2,0.179],advD:[0.28,0.42,1.36,0.08,0.3,0.157]},
+    {lg:"CFB",away:"Furman",home:"Tennessee",fav:"Tennessee",dog:"Furman",kick:"Sat 2:30p",sar:-48.5,cons:-48.5,total:66.5,model:null,tModel:null,tv:"SECN+",cues:["marquee"],fOff:39.3,fOffR:4,fDef:22.4,fDefR:44,dOff:null,dOffR:null,dDef:null,dDefR:null,advF:[0.26,0.41,1.27,0.12,0.22,0.184],advD:null},
+    {lg:"CFB",away:"Northern Illinois",home:"Iowa",fav:"Iowa",dog:"Northern Illinois",kick:"Sat 3:15p",sar:-31.5,cons:-31.5,total:44.5,model:-34.0,tModel:47.5,tv:"BTN",cues:[],fOff:30.8,fOffR:35,fDef:16.8,fDefR:16,dOff:15.2,dOffR:125,dDef:32.1,dDefR:106,advF:[0.19,0.24,1.12,0.08,0.16,0.169],advD:[0.11,0,1.26,0.17,0.19,0.112]},
+    {lg:"CFB",away:"Missouri State",home:"Texas A&M",fav:"Texas A&M",dog:"Missouri State",kick:"Sat 6:00p",sar:-41,cons:-40.5,total:53.5,model:null,tModel:null,tv:"ESPN",cues:["marquee"],fOff:37.6,fOffR:8,fDef:16.4,fDefR:14,dOff:null,dOffR:null,dDef:null,dDefR:null,advF:[0.16,0.38,1.23,0.15,0.1,0.214],advD:null},
+    {lg:"CFB",away:"Abilene Christian",home:"Texas Tech",fav:"Texas Tech",dog:"Abilene Christian",kick:"Sat 6:00p",sar:-43,cons:-42.5,total:59.5,model:null,tModel:null,tv:"FS1",cues:[],fOff:36.6,fOffR:10,fDef:15,fDefR:11,dOff:null,dOffR:null,dDef:null,dDefR:null,advF:[0.17,0.35,1.35,-0.16,0,0.233],advD:null},
+    {lg:"CFB",away:"Western Michigan",home:"Michigan",fav:"Michigan",dog:"Western Michigan",kick:"Sat 6:30p",sar:-27.5,cons:-27.5,total:49.5,model:-25.5,tModel:47.0,tv:"NBC",cues:["marquee"],fOff:33.2,fOffR:16,fDef:15.8,fDefR:12,dOff:19.6,dOffR:109,dDef:25.2,dDefR:62,advF:[0.23,0.2,1.17,0.07,0.22,0.167],advD:[0.14,0.1,1.05,0.06,0.1,0.173]},
+    {lg:"CFB",away:"Clemson",home:"LSU",fav:"LSU",dog:"Clemson",kick:"Sat 6:30p",sar:-10,cons:-10,total:50.5,model:-9.5,tModel:46.0,tv:"ABC",cues:["marquee","rivalry"],fOff:32.6,fOffR:21,fDef:12.4,fDefR:3,dOff:29.8,dOffR:46,dDef:17.1,dDefR:18,advF:[0.01,0.18,1.22,0.01,0.18,0.17],advD:[0.1,0.28,1.24,0.03,0.19,0.196]},
+    {lg:"CFB",away:"Utah Tech",home:"BYU",fav:"BYU",dog:"Utah Tech",kick:"Sat 7:00p",sar:-51.5,cons:-51.5,total:61.5,model:null,tModel:null,tv:"ESPN+",cues:[],fOff:32.9,fOffR:19,fDef:18.3,fDefR:22,dOff:null,dOffR:null,dDef:null,dDefR:null,advF:[0.2,0.28,1.19,0.06,0.18,0.158],advD:null},
+    {lg:"CFB",away:"Washington State",home:"Washington",fav:"Washington",dog:"Washington State",kick:"Sun 3:00p",sar:-23.5,cons:-23.5,total:51,model:-22.5,tModel:47.5,tv:"NBC",cues:["rivalry"],fOff:33,fOffR:18,fDef:17,fDefR:17,dOff:20.4,dOffR:107,dDef:24.6,dDefR:58,advF:[0.26,0.38,1.23,-0.03,0.2,0.146],advD:[0.09,0.21,1.12,0.08,0.11,0.145]},
+    {lg:"CFB",away:"Wisconsin",home:"Notre Dame",fav:"Notre Dame",dog:"Wisconsin",kick:"Sun 6:30p",sar:-20.5,cons:-20.5,total:46.5,model:-25.0,tModel:47.0,tv:"NBC",cues:["marquee"],fOff:40.6,fOffR:3,fDef:14.3,fDefR:9,dOff:21.6,dOffR:100,dDef:17.5,dDefR:20,advF:[0.25,0.45,1.44,0.04,0.09,0.184],advD:[0.04,0.03,1.23,0.06,0.33,0.129]},
+    {lg:"CFB",away:"Louisville",home:"Ole Miss",fav:"Ole Miss",dog:"Louisville",kick:"Sun 6:30p",sar:-6.5,cons:-6.5,total:55,model:-8.0,tModel:52.5,tv:"ABC",cues:["marquee"],fOff:35.2,fOffR:11,fDef:19.4,fDefR:26,dOff:30.7,dOffR:38,dDef:19.8,dDefR:27,advF:[0.15,0.46,1.29,0.19,0.13,0.167],advD:[0.21,0.13,1.22,0.07,0.06,0.173]},
+    {lg:"CFB",away:"SMU",home:"Florida State",fav:"SMU",dog:"Florida State",kick:"Mon 6:30p",sar:-3,cons:-3,total:53.5,model:-0.5,tModel:51.5,tv:"ESPN",cues:["marquee","recency"],fOff:32.5,fOffR:22,fDef:20.1,fDefR:29,dOff:29.8,dOffR:46,dDef:20.4,dDefR:30,advF:[0.11,0.4,1.36,-0.08,0.19,0.188],advD:[0.25,0.32,1.35,0.11,0.25,0.155]}
+  ];
+
+  const CUE_LABEL={marquee:"marquee",recency:"recency bias",rivalry:"rivalry/revenge",primetime:"primetime"};
+  const TH={spread:{market:1.0,model:1.5,scale:6},total:{edge:2.0}};
+  // Model engine — projected home spread from power ratings. Computes when SP+/EPA ratings load.
+  const HFA=2.4; // home-field advantage, points (CFB ~2.4). Neutral-site games: set g.neutral=true
+  const MODEL_W=0.4; // early-season fade (Week 1-2): trust SP+ less now, ramp toward 1.0 by ~Week 5
+  function projectSpread(g){
+    const r=x=>x!==null&&x!==undefined&&!isNaN(x);
+    if(!r(g.homeRating)||!r(g.awayRating)) return null;
+    const margin=(g.homeRating-g.awayRating)+(g.neutral?0:HFA); // expected home margin
+    return Math.round(-margin*2)/2; // home-spread convention, nearest 0.5
+  }
+  GAMES.forEach((g,i)=>{g.__i=i; g.sarEdit=g.sar; if(g.tv===undefined)g.tv=null; if(g.model===undefined)g.model=null; g.day=g.kick.split(" ")[0];});
+
+  let league="ALL", bet="spread", day="ALL", tvOnly=false;
+  const $=s=>document.querySelector(s);
+  const rowsEl=$("#rows"), kpiEl=$("#kpis");
+  const has=x=>x!==null&&x!==undefined&&!isNaN(x);
+  const fmt=v=>!has(v)?"—":(v>0?"+"+v.toFixed(1):v.toFixed(1));
+  const viewGames=()=>GAMES.filter(g=>(league==="ALL"||g.lg===league)&&(day==="ALL"||g.day===day)&&(!tvOnly||(g.tv!==null&&g.tv!==undefined)));
+
+  function compute(g){
+    const t=TH[bet];
+    const cons=g.cons, sar=g.sarEdit, model=g.model;
+    const marketGap=(has(sar)&&has(cons))?Math.abs(sar-cons):null;
+    const mbase=has(sar)?sar:(has(cons)?cons:null);
+    const modelGap=(has(mbase)&&has(model))?Math.abs(mbase-model):null;
+    const rank=(marketGap||0)+(modelGap||0);
+    return {cons,sar,model,marketGap,modelGap,rank,hasCons:has(cons),hasModel:has(model),hasSar:has(sar)};
+  }
+
+  function spreadLean(g,c){
+    if(!c.hasSar||!c.hasModel) return "";
+    const d=g.sarEdit-g.model;
+    if(Math.abs(d)<TH.spread.model/MODEL_W) return "";
+    return "lean <b>"+(d>0?g.fav:g.dog)+"</b>";
+  }
+  const pend=t=>'<div class="soft"><span class="chip pend">'+t+'</span></div>';
+
+  function softCell(kind,g,c){
+    const t=TH[bet], th=(kind==="model")?t.model/MODEL_W:t[kind];
+    if(kind==="market"){ if(!c.hasCons) return pend("feed pending"); if(!c.hasSar) return pend("no Saracen line"); }
+    if(kind==="model"){ if(!c.hasModel) return pend("model pending"); if(!c.hasSar&&!c.hasCons) return pend("no line"); }
+    const gap=kind==="market"?c.marketGap:c.modelGap;
+    const flagged=gap!==null&&gap>=th;
+    const pct=gap===null?0:Math.min(100,(gap/t.scale)*100);
+    const chip=flagged?'<span class="chip '+kind+'"><span class="dot"></span>'+(kind==="market"?"Market Soft":"Model Soft")+'</span>':'<span class="chip dim">in line</span>';
+    let extra="";
+    if(kind==="model"){ const l=spreadLean(g,c); if(l&&flagged) extra='<div class="lean">'+l+'</div>'; }
+    return '<div class="soft"><div class="softtop">'+chip+'<span class="gapval '+(flagged?kind:"dim")+'">'+gap.toFixed(1)+' pt</span></div>'+
+      '<div class="bar '+kind+'"><span style="width:'+pct+'%"></span></div>'+extra+'</div>';
+  }
+
+  function renderKpis(inView){
+    const lgNote=league==="ALL"?"NFL + College":(league==="CFB"?"College":"NFL");
+    if(bet==="total"){
+      let over=0,under=0,bestEdge=0,bestPick="no total edge";
+      inView.forEach(g=>{const p=totalPick(g);if(p.edge>0){(p.pillTeam.indexOf("Over")===0?over++:under++);}if(p.edge>bestEdge){bestEdge=p.edge;bestPick=p.pillTeam;}});
+      kpiEl.innerHTML=
+        tile("","Games on board",inView.length,lgNote)+
+        tile("market","Over leans",over,"stats > the line")+
+        tile("model","Under leans",under,"stats < the line")+
+        tile("edge","Top total edge",bestEdge>0?bestPick:"—","projection vs line");
+      return;
+    }
+    const hasM=inView.some(g=>compute(g).hasCons);
+    const hasMd=inView.some(g=>compute(g).hasModel);
+    let mkt=0,mdl=0,bestEdge=0,bestPick="chalk slate — no spread edges",bestConf=null;
+    inView.forEach(g=>{const c=compute(g);
+      if(c.marketGap!==null&&c.marketGap>=TH.spread.market)mkt++;
+      if(c.modelGap!==null&&c.modelGap>=TH.spread.model/MODEL_W)mdl++;
+      const p=pick(g,c); if(p.edge>bestEdge){bestEdge=p.edge;bestPick=p.pillTeam;bestConf=p.conf;}});
+    kpiEl.innerHTML=
+      tile("","Games on board",inView.length,lgNote)+
+      tile("market","Market Soft",hasM?mkt:"—",hasM?"Saracen vs. market":"connect Odds API")+
+      tile("model","Model Soft",hasMd?mdl:"—",hasMd?"line vs. stats":"build stats model")+
+      tile("edge","Top edge bet",bestEdge>0?bestConf+'%':"—",bestEdge>0?bestPick:"chalk slate today");
+  }
+  const tile=(cls,lab,val,note)=>'<div class="kpi '+cls+'"><div class="lab">'+lab+'</div><div class="val">'+val+'</div><div class="note">'+note+'</div></div>';
+
+  function nprob(x){var t=1/(1+0.3275911*Math.abs(x));var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);var e=x>=0?y:-y;return 0.5*(1+e);}
+  function pick(g,c){
+    const sar=c.sar;
+    if(!c.hasSar) return {txt:"Type in the Saracen line to get a pick.",conf:null,cls:"na",edge:0};
+    const absS=Math.abs(sar), hasM=c.hasModel, model=c.model;
+    const d=hasM?(sar-model):0, atsEdge=hasM?Math.abs(d):0;
+    if(hasM && atsEdge>=2.0 && absS<=24){
+      const betFav=d>0, team=betFav?g.fav:g.dog, num=betFav?fmt(sar):("+"+absS);
+      let plain;
+      if(betFav){const by=(absS%1)?Math.ceil(absS):absS+1;plain="they need to win by "+by+" or more.";}
+      else {const by=(absS%1)?Math.floor(absS):absS-1;plain="they just need to lose by "+by+" or fewer — or win outright.";}
+      const wc=absS<=14?1.0:0.6;
+      const conf=Math.max(51,Math.min(66,Math.round(50+atsEdge*2*wc)));
+      const soft=(c.marketGap!=null&&c.marketGap>=TH.spread.market)?" — soft line, extra value here":"";
+      return {txt:"Bet <b>"+team+" "+num+"</b> on the spread — "+plain+soft,conf:conf,cls:"go",pillTeam:team+" "+num,edge:atsEdge};
+    }
+    const margin=hasM?(-model):absS;
+    const conf=Math.max(52,Math.min(97,Math.round(nprob(margin/13.5)*100)));
+    const small=absS>=14?" It’s a heavy favorite, so the payout is small.":"";
+    return {txt:"Bet <b>"+g.fav+"</b> to win the game (moneyline) — just pick the winner."+small,conf:conf,cls:"ml",pillTeam:g.fav+" ML",edge:0};
+  }
+  function miniSoft(kind,g,c){
+    const label=kind==="market"?"Mkt":"Mdl";
+    const dot='<span class="sig-dot '+kind+'"></span>';
+    if(kind==="market"&&(!c.hasCons||!c.hasSar)) return '<div class="sig">'+dot+label+' \u2014</div>';
+    if(kind==="model"&&!c.hasModel) return '<div class="sig">'+dot+label+' n/a</div>';
+    const gap=kind==="market"?c.marketGap:c.modelGap;
+    const th=(kind==="model")?TH.spread.model/MODEL_W:TH.spread.market;
+    const flagged=gap!=null&&gap>=th;
+    return '<div class="sig '+(flagged?'on '+kind:'')+'">'+dot+label+' '+(flagged?'SOFT':'ok')+' <b>'+(gap!=null?gap.toFixed(1):'\u2013')+'</b></div>';
+  }
+  function confPill(v){const cl=v>=62?'hi':(v>=55?'mid':'lo');return '<span class="conf '+cl+'">'+v+'%</span>';}
+  function analysis(g,c){
+    if(g.fOff==null||g.dOff==null){
+      return '<div class="an"><div class="an-note"><b>'+g.dog+'</b> is an FCS / unrated opponent — no SP+ profile to model. <b>'+g.fav+'</b> is a heavy favorite; this is a get-the-starters-out spot where the spread is about garbage time, not a matchup. The stats model sits it out — any bet here is a total or a moneyline, not a read on who is better.</div></div>';
+    }
+    const favIsHome=(g.home===g.fav);
+    const awayWho=favIsHome?'d':'f', homeWho=favIsHome?'f':'d';
+    const gv=(w,k)=>g[w+k];
+    const trow=(name,w)=>'<tr><td class="an-team">'+name+'</td><td>#'+gv(w,'OffR')+' <span class="an-rt">'+gv(w,'Off').toFixed(1)+'</span></td><td>#'+gv(w,'DefR')+' <span class="an-rt">'+gv(w,'Def').toFixed(1)+'</span></td></tr>';
+    const tbl='<table class="an-tbl"><thead><tr><th>SP+ rank (rating)</th><th>Offense</th><th>Defense</th></tr></thead><tbody>'+trow(g.away,awayWho)+trow(g.home,homeWho)+'</tbody></table>';
+    const favOe=g.dDefR-g.fOffR, favDe=g.dOffR-g.fDefR;
+    let key;
+    if(Math.abs(favOe)>=Math.abs(favDe)){
+      key = favOe>0 ? '<b>'+g.fav+'’s offense is the separator</b> — #'+g.fOffR+' in SP+ against '+g.dog+'’s #'+g.dDefR+' defense.'
+                    : '<b>'+g.dog+' can move the ball</b> — their offense (#'+g.dOffR+') actually out-ranks '+g.fav+'’s (#'+g.fOffR+'), so '+g.fav+' has to win elsewhere.';
+    } else {
+      key = favDe>0 ? '<b>'+g.fav+'’s defense is the separator</b> — #'+g.fDefR+' in SP+ against '+g.dog+'’s #'+g.dOffR+' offense.'
+                    : '<b>'+g.dog+'’s defense can keep it close</b> — #'+g.dDefR+' against '+g.fav+'’s #'+g.fOffR+' offense.';
+    }
+    function profile(name,a){
+      if(!a) return '<b>'+name+'</b>: no 2025 efficiency profile.';
+      const oR=a[0],oP=a[1],oE=a[2],dR=a[3],dP=a[4],dH=a[5];
+      const off=(oP>=oR)?('leans pass ('+oP.toFixed(2)+' PPA/play)'):('leans run ('+oR.toFixed(2)+' PPA/play)');
+      const expl=oE>=1.32?', explosive':(oE<=1.15?', low big-play':'');
+      const soft=(dP>=dR)?'softer vs the pass':'softer vs the run';
+      const hav=dH>=0.19?'high-havoc D':(dH<=0.14?'low-havoc D':'average havoc');
+      return '<b>'+name+'</b> — '+off+expl+'; D '+soft+', '+hav+'.';
+    }
+    const scout=(function(){
+      const F=g.advF,D=g.advD; if(!F||!D) return '';
+      const favPass=F[1]>=F[0], favStr=(favPass?F[1]:F[0]);
+      const dogSoftPass=D[4]>=D[3];
+      const align=(favPass===dogSoftPass);
+      return g.fav+' wants it '+(favPass?'through the air':'on the ground')+' ('+favStr.toFixed(2)+' PPA), and '+g.dog+'’s defense is softer '+(dogSoftPass?'against the pass':'against the run')+'. '+(align?'<b>That matchup favors '+g.fav+'.</b>':'But that’s '+g.dog+'’s sturdier side, so it’s not a clean lane for '+g.fav+'.');
+    })();
+    const proj=g.model, p=pick(g,c);
+    const projTxt='SP+ projects <b>'+g.fav+' by '+Math.abs(proj).toFixed(1)+'</b> with home field; Saracen’s line is <b>'+g.fav+' '+fmt(g.sar)+'</b>.';
+    const verdict='<b>Against the spread:</b> '+p.txt.replace(/^Bet /,'').replace(/ on the spread/,'');
+    let totalTxt='';
+    if(g.tModel!=null&&has(g.total)){
+      const diff=g.tModel-g.total,e=Math.abs(diff),side=diff>=0?'Over':'Under';
+      totalTxt='<b>Total:</b> stats project ~'+g.tModel.toFixed(1)+' points vs a '+g.total.toFixed(1)+' line — '+(e<TH.total.edge?'basically the number, no strong lean.':'lean the <b>'+side+'</b>.');
+    }
+    const awayAdv=favIsHome?g.advD:g.advF, homeAdv=favIsHome?g.advF:g.advD;
+    return '<div class="an">'+tbl+'<div class="an-read">'
+      +'<p>'+key+'</p>'
+      +'<p class="an-prof">'+profile(g.away,awayAdv)+'</p>'
+      +'<p class="an-prof">'+profile(g.home,homeAdv)+'</p>'
+      +(scout?'<p>'+scout+'</p>':'')
+      +'<p>'+projTxt+'</p>'
+      +'<p>'+verdict+'</p>'
+      +(totalTxt?'<p>'+totalTxt+'</p>':'')
+      +'</div></div>';
+  }
+  function totalPick(g){
+    const proj=g.tModel, line=g.total;
+    if(proj==null) return {txt:"No totals projection — FCS / unrated opponent.",conf:null,cls:"na",edge:0,pillTeam:""};
+    if(!has(line)) return {txt:"No market total yet.",conf:null,cls:"na",edge:0,pillTeam:""};
+    const diff=proj-line, e=Math.abs(diff), side=diff>=0?"Over":"Under";
+    if(e<TH.total.edge) return {txt:"No total edge — stats project ~"+proj.toFixed(1)+", right on the "+line.toFixed(1)+" line.",conf:null,cls:"na",edge:0,pillTeam:side+" "+line.toFixed(1)};
+    const conf=Math.max(51,Math.min(64,Math.round(50+e*3)));
+    return {txt:"Bet the <b>"+side+" "+line.toFixed(1)+"</b> — the stats project about "+proj.toFixed(1)+" points.",conf:conf,cls:"go",edge:e,pillTeam:side+" "+line.toFixed(1)};
+  }
+  function linesCell(g,c){
+    if(bet==="total"){
+      return '<div class="lines"><span class="mkt-line"><span class="ll">Line</span> '+(has(g.total)?g.total.toFixed(1):"—")+'</span><span class="mkt-line"><span class="ll">Proj</span> '+(g.tModel==null?"—":g.tModel.toFixed(1))+'</span></div>';
+    }
+    return '<div class="lines">'
+      +(c.hasCons?'<span class="mkt-line"><span class="ll">Mkt</span> '+g.fav+' '+fmt(c.cons)+'</span>':'<span class="mkt-line pend"><span class="ll">Mkt</span> —</span>')
+      +'<div class="sar-line"><span class="ll">Sar</span><input class="sar-in" data-i="'+g.__i+'" inputmode="decimal" value="'+(has(g.sarEdit)?g.sarEdit:"")+'" placeholder="—" aria-label="Saracen spread"><span class="ll">'+g.fav+'</span></div>'
+      +'</div>';
+  }
+  function signalsCell(g,c){
+    if(bet==="total"){
+      if(g.tModel==null) return '<div class="signals"><div class="sig">FCS — n/a</div></div>';
+      const diff=g.tModel-g.total, side=diff>=0?"Over":"Under", flag=Math.abs(diff)>=TH.total.edge;
+      return '<div class="signals"><div class="sig'+(flag?" on model":"")+'"><span class="sig-dot model"></span>'+side+' <b>'+Math.abs(diff).toFixed(1)+'</b></div></div>';
+    }
+    return '<div class="signals">'+miniSoft("market",g,c)+miniSoft("model",g,c)+'</div>';
+  }
+  function render(){
+    const inView=viewGames();
+    renderKpis(inView);
+    if(!inView.length){
+      const msg=tvOnly
+        ? "TV / stream networks load with the CollegeFootballData key — connect it to use this filter."
+        : "No games match this filter yet. NFL Week 1 lines post later this week — hit “Pull Saracen lines” once they’re live.";
+      rowsEl.innerHTML='<tr><td colspan="7" class="emptyrow">'+msg+'</td></tr>';
+      return;
+    }
+    const getp=(g,c)=>bet==="total"?totalPick(g):pick(g,c);
+    const list=inView.map(g=>({g,c:compute(g)})).sort((a,b)=>{const pa=getp(a.g,a.c),pb=getp(b.g,b.c);return (pb.edge-pa.edge)||((pb.conf==null?-1:pb.conf)-(pa.conf==null?-1:pa.conf));});
+    rowsEl.innerHTML=list.map((x,idx)=>{
+      const g=x.g,c=x.c,p=getp(g,c);
+      const cuesHtml=g.cues&&g.cues.length?'<div class="cues">'+g.cues.map(k=>'<span class="cue">'+CUE_LABEL[k]+'</span>').join("")+'</div>':"";
+      const tvHtml=g.tv?'<span class="tv">📺 '+g.tv+'</span>':'<span class="tv-pend">— feed —</span>';
+      return '<tr>'+
+        '<td class="rank">'+(idx+1)+'</td>'+
+        '<td><div class="game"><span class="teams">'+g.away+'<span class="at">@</span>'+g.home+'</span>'+
+          '<span class="gmeta"><span class="lg '+g.lg+'">'+g.lg+'</span><span class="kick">'+g.kick+'</span></span>'+cuesHtml+
+          '<button class="an-toggle" type="button">▸ analysis</button></div></td>'+
+        '<td>'+tvHtml+'</td>'+
+        '<td class="numcell">'+linesCell(g,c)+'</td>'+
+        '<td>'+signalsCell(g,c)+'</td>'+
+        '<td><div class="bet '+(p.cls||'')+'">'+p.txt+'</div></td>'+
+        '<td class="numcell">'+(p.conf==null?'<span class="conf-na">—</span>':confPill(p.conf))+'</td>'+
+      '</tr>'+
+      '<tr class="detail" hidden><td colspan="7">'+analysis(g,c)+'</td></tr>';
+    }).join("");
+  }
+
+  rowsEl.addEventListener("input",e=>{
+    const el=e.target.closest(".sar-in"); if(!el)return;
+    const g=GAMES[+el.dataset.i], v=el.value.trim();
+    g.sarEdit = (v===""||v==="-"||v==="+") ? null : parseFloat(v.replace("+",""));
+    const tr=el.closest("tr"), c=compute(g), cells=tr.querySelectorAll("td"), p=pick(g,c);
+    cells[4].innerHTML=signalsCell(g,c);
+    cells[5].innerHTML='<div class="bet '+(p.cls||'')+'">'+p.txt+'</div>';
+    cells[6].innerHTML=p.conf==null?'<span class="conf-na">—</span>':confPill(p.conf);
+    renderKpis(viewGames());
+  });
+  rowsEl.addEventListener("change",render);
+  rowsEl.addEventListener("click",e=>{const b=e.target.closest(".an-toggle");if(!b)return;const d=b.closest("tr").nextElementSibling;if(d&&d.classList.contains("detail")){d.hidden=!d.hidden;b.textContent=(d.hidden?"\u25b8":"\u25be")+" analysis";}});
+
+  $("#leagueSeg").addEventListener("click",e=>{const b=e.target.closest("button[data-lg]");if(!b)return;
+    league=b.dataset.lg; sel("#leagueSeg",b); render();});
+  $("#betSeg").addEventListener("click",e=>{const b=e.target.closest("button[data-bet]");if(!b||b.classList.contains("locked"))return;
+    bet=b.dataset.bet; sel("#betSeg",b); render();});
+  $("#daySeg").addEventListener("click",e=>{const b=e.target.closest("button[data-day]");if(!b)return;
+    day=b.dataset.day; sel("#daySeg",b); render();});
+  $("#tvOnly").addEventListener("click",e=>{tvOnly=!tvOnly; e.currentTarget.setAttribute("aria-pressed",tvOnly); render();});
+  function sel(seg,btn){document.querySelectorAll(seg+" button").forEach(x=>x.setAttribute("aria-selected","false"));btn.setAttribute("aria-selected","true");}
+
+  const toast=$("#toast"); let toastT;
+  function showToast(msg,ok){clearTimeout(toastT);
+    toast.innerHTML=(ok?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':'')+msg;
+    toast.classList.add("show");toastT=setTimeout(()=>toast.classList.remove("show"),4600);}
+  $("#pull").addEventListener("click",()=>{
+    const msg="update the site — refresh all the lines and analysis";
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(msg).then(
+        ()=>showToast("Copied “update the site” — paste it in chat and I’ll refresh everything.",true),
+        ()=>showToast("Type “update the site” in chat and I’ll refresh it."));
+    } else showToast("Type “update the site” in chat and I’ll refresh it.");
+  });
+
+  const root=document.documentElement, tbtn=$("#theme");
+  try{const s=localStorage.getItem("slr-theme"); if(s)root.setAttribute("data-theme",s);}catch(e){}
+  tbtn.addEventListener("click",()=>{
+    const cur=root.getAttribute("data-theme");
+    const isDark=cur?cur==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+    const next=isDark?"light":"dark"; root.setAttribute("data-theme",next);
+    try{localStorage.setItem("slr-theme",next);}catch(e){}
+  });
+
+  $("#stamp").textContent="CFB · updated Sep 5, 6:25a";
+  render();
+})();
+</script>
