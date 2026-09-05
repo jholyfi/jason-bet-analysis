@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bet Analysis — Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#f4f6f3; --surface:#ffffff; --surface-2:#f0f2ee; --raised:#ffffff;
+    --ink:#161d18; --ink-2:#4c5751; --ink-3:#7c877f;
+    --border:#e0e5df; --border-2:#cdd4cc;
+    --accent:#1c7a4b; --accent-ink:#ffffff; --accent-soft:#e4f2ea;
+    --market:#0e7ca0; --market-soft:#e0f2f8; --market-ink:#0a5c78;
+    --model:#b8600a; --model-soft:#fbeddb; --model-ink:#8a4707;
+    --pos:#1c7a4b; --neg:#b42318; --warn:#b8600a;
+    --shadow:0 1px 2px rgba(16,29,22,.06),0 4px 14px rgba(16,29,22,.05);
+    --shadow-lift:0 2px 6px rgba(16,29,22,.10),0 10px 28px rgba(16,29,22,.10);
+    --r:10px; --r-sm:7px; --r-lg:16px;
+    --f-disp:"Barlow Semi Condensed",system-ui,sans-serif;
+    --f-body:"IBM Plex Sans",system-ui,sans-serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1210; --surface:#141b17; --surface-2:#101613; --raised:#1a221d;
+      --ink:#e9efe9; --ink-2:#a3b0a7; --ink-3:#6f7c73;
+      --border:#242e28; --border-2:#33403a;
+      --accent:#33c47a; --accent-ink:#052012; --accent-soft:#12281c;
+      --market:#3fc0e6; --market-soft:#0c2530; --market-ink:#8fd9ef;
+      --model:#f2a94e; --model-soft:#2c1e0e; --model-ink:#f7c98a;
+      --pos:#33c47a; --neg:#f2705f; --warn:#f2a94e;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.5),0 14px 34px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1210; --surface:#141b17; --surface-2:#101613; --raised:#1a221d;
+    --ink:#e9efe9; --ink-2:#a3b0a7; --ink-3:#6f7c73;
+    --border:#242e28; --border-2:#33403a;
+    --accent:#33c47a; --accent-ink:#052012; --accent-soft:#12281c;
+    --market:#3fc0e6; --market-soft:#0c2530; --market-ink:#8fd9ef;
+    --model:#f2a94e; --model-soft:#2c1e0e; --model-ink:#f7c98a;
+    --pos:#33c47a; --neg:#f2705f; --warn:#f2a94e;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.5),0 14px 34px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);
+    -webkit-font-smoothing:antialiased;line-height:1.45;font-size:14px}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 20px 80px}
+  a{color:inherit}
+  /* header */
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  h1{font-family:var(--f-disp);font-weight:700;font-size:34px;letter-spacing:-.01em;margin:0 0 4px}
+  .sub{color:var(--ink-2);max-width:640px;margin:0}
+  .toolbar{display:flex;align-items:center;gap:8px}
+  .btn{font-family:var(--f-body);font-weight:600;font-size:13px;border:1px solid var(--border-2);
+    background:var(--surface);color:var(--ink);border-radius:var(--r-sm);padding:8px 12px;cursor:pointer;
+    text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn-primary:hover{color:var(--accent-ink);filter:brightness(1.05)}
+  .icon{width:34px;height:34px;justify-content:center;padding:0}
+  /* tiles */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 8px}
+  @media(max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:14px 16px;box-shadow:var(--shadow)}
+  .tile.big{grid-column:span 1}
+  .tile .lab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .tile .val{font-family:var(--f-disp);font-weight:700;font-size:30px;line-height:1.05;margin-top:6px}
+  .tile .rec{font-family:var(--f-mono);font-size:13px;color:var(--ink-2);margin-top:4px}
+  .u-pos{color:var(--pos)} .u-neg{color:var(--neg)} .u-flat{color:var(--ink-2)}
+  .typetiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 4px}
+  @media(max-width:820px){.typetiles{grid-template-columns:1fr}}
+  .ttile{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+  .ttile .th{display:flex;justify-content:space-between;align-items:center}
+  .ttile .nm{font-family:var(--f-disp);font-weight:600;font-size:16px}
+  .ttile .mn{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+  .pill{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px}
+  .pill.spread{background:var(--market-soft);color:var(--market-ink)}
+  .pill.total{background:var(--accent-soft);color:var(--accent)}
+  .pill.ml{background:var(--model-soft);color:var(--model-ink)}
+  /* filters */
+  .filters{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:22px 0 10px}
+  .fgroup{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px}
+  .fbtn{font-family:var(--f-body);font-weight:600;font-size:12px;border:0;background:transparent;color:var(--ink-2);
+    padding:6px 11px;border-radius:5px;cursor:pointer}
+  .fbtn.on{background:var(--raised);color:var(--ink);box-shadow:var(--shadow)}
+  .flab{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-right:2px}
+  /* table */
+  .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow);margin-top:10px}
+  table{border-collapse:collapse;width:100%;min-width:820px}
+  thead th{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600;
+    text-align:left;padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface)}
+  th.num,td.num{text-align:right}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:var(--surface-2)}
+  .g-team{font-weight:600}
+  .g-meta{font-size:11px;color:var(--ink-3);font-family:var(--f-mono);margin-top:2px}
+  .pick{font-weight:600}
+  .mono{font-family:var(--f-mono)}
+  .conf{font-family:var(--f-mono);font-weight:600}
+  .st{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .st.pending{background:var(--surface-2);color:var(--ink-3);border:1px dashed var(--border-2)}
+  .st.win{background:var(--accent-soft);color:var(--pos)}
+  .st.loss{background:#fbe6e3;color:var(--neg)}
+  :root[data-theme="dark"] .st.loss,:root:not([data-theme="light"]) .st.loss{background:#301613}
+  @media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .st.loss{background:#fbe6e3}}
+  .st.push{background:var(--surface-2);color:var(--ink-2)}
+  .uni{font-family:var(--f-mono);font-weight:600}
+  .foot{color:var(--ink-3);font-size:12px;margin-top:18px;line-height:1.6}
+  .empty{padding:40px;text-align:center;color:var(--ink-3)}
+  .lockmark{font-size:10px;color:var(--warn);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Results Tracker</h1>
+      <p class="sub">Every recommendation over 55% confidence, locked at kickoff and graded against the final result. Spreads and totals are priced at −110; moneyline prices are added at pull time.</p>
+    </div>
+    <div class="toolbar">
+      <a class="btn btn-primary" href="./index.html">← Board</a>
+      <button class="btn icon" id="theme" title="Toggle theme" aria-label="Toggle theme">◐</button>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="typetiles" id="typetiles"></div>
+
+  <div class="filters">
+    <div><span class="flab">Type</span>
+      <span class="fgroup" id="f-type">
+        <button class="fbtn on" data-v="all">All</button>
+        <button class="fbtn" data-v="spread">Spread</button>
+        <button class="fbtn" data-v="total">Total</button>
+        <button class="fbtn" data-v="ml">Moneyline</button>
+      </span>
+    </div>
+    <div><span class="flab">Status</span>
+      <span class="fgroup" id="f-status">
+        <button class="fbtn on" data-v="all">All</button>
+        <button class="fbtn" data-v="pending">Pending</button>
+        <button class="fbtn" data-v="graded">Graded</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th>Logged</th><th>Game</th><th>Type</th><th>Pick</th><th class="num">Conf</th>
+        <th class="num">Odds</th><th>Result</th><th>Final</th><th class="num">Units</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+/* ── Recommendation log ──────────────────────────────────────────────
+   Each entry is captured at a pregame update and LOCKED at kickoff.
+   status: "pending" until graded, then "win" | "loss" | "push".
+   final:  the final score once the game ends (e.g., "Alabama 45, ECU 3").
+   odds:   spread/total = -110; moneyline = null until the ML price is captured.
+   Units are computed from odds + status; ML picks show "—" until priced. */
+const PICKS = [
+  // ── Spread & Moneyline (from the board's "The Bet" column) ──
+  {id:1,  date:"2026-09-05", game:"Oregon State @ Houston",        kick:"Sat 11:00a", type:"spread", pick:"Oregon State +20.5", conf:56, odds:-110, status:"pending", final:null},
+  {id:2,  date:"2026-09-05", game:"North Texas @ Indiana",         kick:"Sat 11:00a", type:"ml",     pick:"Indiana ML",         conf:97, odds:null, status:"pending", final:null},
+  {id:3,  date:"2026-09-05", game:"East Carolina @ Alabama",       kick:"Sat 11:00a", type:"ml",     pick:"Alabama ML",         conf:97, odds:null, status:"pending", final:null},
+  {id:4,  date:"2026-09-05", game:"Ball State @ Ohio State",       kick:"Sat 11:30a", type:"ml",     pick:"Ohio State ML",      conf:97, odds:null, status:"pending", final:null},
+  {id:5,  date:"2026-09-05", game:"Tennessee State @ Georgia",     kick:"Sat 2:00p",  type:"ml",     pick:"Georgia ML",         conf:97, odds:null, status:"pending", final:null},
+  {id:6,  date:"2026-09-05", game:"Boise State @ Oregon",          kick:"Sat 2:30p",  type:"ml",     pick:"Oregon ML",          conf:97, odds:null, status:"pending", final:null},
+  {id:7,  date:"2026-09-05", game:"Texas State @ Texas",           kick:"Sat 2:30p",  type:"ml",     pick:"Texas ML",           conf:97, odds:null, status:"pending", final:null},
+  {id:8,  date:"2026-09-05", game:"Furman @ Tennessee",            kick:"Sat 2:30p",  type:"ml",     pick:"Tennessee ML",       conf:97, odds:null, status:"pending", final:null},
+  {id:9,  date:"2026-09-05", game:"Northern Illinois @ Iowa",      kick:"Sat 3:15p",  type:"ml",     pick:"Iowa ML",            conf:97, odds:null, status:"pending", final:null},
+  {id:10, date:"2026-09-05", game:"Missouri State @ Texas A&M",    kick:"Sat 6:00p",  type:"ml",     pick:"Texas A&M ML",       conf:97, odds:null, status:"pending", final:null},
+  {id:11, date:"2026-09-05", game:"Abilene Christian @ Texas Tech",kick:"Sat 6:00p",  type:"ml",     pick:"Texas Tech ML",      conf:97, odds:null, status:"pending", final:null},
+  {id:12, date:"2026-09-05", game:"Western Michigan @ Michigan",   kick:"Sat 6:30p",  type:"ml",     pick:"Michigan ML",        conf:97, odds:null, status:"pending", final:null},
+  {id:13, date:"2026-09-05", game:"Utah Tech @ BYU",               kick:"Sat 7:00p",  type:"ml",     pick:"BYU ML",             conf:97, odds:null, status:"pending", final:null},
+  {id:14, date:"2026-09-05", game:"Washington State @ Washington", kick:"Sun 3:00p",  type:"ml",     pick:"Washington ML",      conf:97, odds:null, status:"pending", final:null},
+  {id:15, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"ml",     pick:"LSU ML",             conf:84, odds:null, status:"pending", final:null},
+  {id:16, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"ml",     pick:"Ole Miss ML",        conf:80, odds:null, status:"pending", final:null},
+  // ── Totals (from the board's Total tab) ──
+  {id:17, date:"2026-09-05", game:"Ball State @ Ohio State",       kick:"Sat 11:30a", type:"total",  pick:"Under 56.5",         conf:64, odds:-110, status:"pending", final:null},
+  {id:18, date:"2026-09-05", game:"Marshall @ Penn State",         kick:"Sat 2:30p",  type:"total",  pick:"Over 52.0",          conf:64, odds:-110, status:"pending", final:null},
+  {id:19, date:"2026-09-05", game:"East Carolina @ Alabama",       kick:"Sat 11:00a", type:"total",  pick:"Under 52.5",         conf:64, odds:-110, status:"pending", final:null},
+  {id:20, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"total",  pick:"Under 50.5",         conf:64, odds:-110, status:"pending", final:null},
+  {id:21, date:"2026-09-05", game:"Washington State @ Washington", kick:"Sun 3:00p",  type:"total",  pick:"Under 51.0",         conf:61, odds:-110, status:"pending", final:null},
+  {id:22, date:"2026-09-05", game:"Northern Illinois @ Iowa",      kick:"Sat 3:15p",  type:"total",  pick:"Over 44.5",          conf:59, odds:-110, status:"pending", final:null},
+  {id:23, date:"2026-09-05", game:"Western Michigan @ Michigan",   kick:"Sat 6:30p",  type:"total",  pick:"Under 49.5",         conf:58, odds:-110, status:"pending", final:null},
+  {id:24, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"total",  pick:"Under 55.0",         conf:58, odds:-110, status:"pending", final:null},
+  {id:25, date:"2026-09-05", game:"SMU @ Florida State",           kick:"Mon 6:30p",  type:"total",  pick:"Under 53.5",         conf:56, odds:-110, status:"pending", final:null},
+];
+
+/* ── engine ── */
+const TYPE_LABEL={spread:"Spread",total:"Total",ml:"Moneyline"};
+const $=s=>document.querySelector(s);
+const state={type:"all",status:"all"};
+
+function profitOnWin(odds){ if(odds==null||isNaN(odds)) return null; return odds<0 ? 100/Math.abs(odds) : odds/100; }
+function unitsFor(p){
+  if(p.status==="pending") return null;
+  if(p.status==="push") return 0;
+  if(p.status==="win"){ const w=profitOnWin(p.odds); return w==null?null:w; }
+  if(p.status==="loss") return -1;
+  return null;
+}
+function fmtU(u){ if(u==null) return "—"; const s=(u>0?"+":"")+u.toFixed(2); return s; }
+
+function summarize(list){
+  let w=0,l=0,pu=0,units=0,staked=0,unitsKnown=false;
+  for(const p of list){
+    if(p.status==="win") w++; else if(p.status==="loss") l++; else if(p.status==="push") pu++;
+    const u=unitsFor(p);
+    if(u!=null && (p.status==="win"||p.status==="loss")){ units+=u; staked+=1; unitsKnown=true; }
+    else if(p.status==="push"){ /* stake returned */ }
+  }
+  const graded=w+l, hit= graded? (w/graded*100):null;
+  const roi = staked? (units/staked*100):null;
+  return {w,l,pu,graded,hit,units,staked,roi,unitsKnown,n:list.length,pending:list.filter(p=>p.status==="pending").length};
+}
+
+function tile(lab,val,rec,cls){
+  return `<div class="tile"><div class="lab">${lab}</div><div class="val ${cls||''}">${val}</div><div class="rec">${rec||""}</div></div>`;
+}
+function renderTiles(){
+  const s=summarize(PICKS);
+  const uclass=!s.unitsKnown?"u-flat":(s.units>0?"u-pos":s.units<0?"u-neg":"u-flat");
+  const recTxt=`${s.w}–${s.l}${s.pu?"–"+s.pu:""} · ${s.pending} pending`;
+  const hitTxt=s.hit==null?"—":s.hit.toFixed(0)+"%";
+  const unitsTxt=!s.unitsKnown?"—":fmtU(s.units)+"u";
+  const roiTxt=s.roi==null?"—":(s.roi>0?"+":"")+s.roi.toFixed(1)+"%";
+  $("#tiles").innerHTML =
+    tile("Recommendations", s.n, recTxt) +
+    tile("Record (graded)", s.graded?`${s.w}–${s.l}${s.pu?"–"+s.pu:""}`:"0–0", "win–loss"+(s.pu?"–push":"")) +
+    tile("Hit rate", hitTxt, s.graded?`${s.w} of ${s.graded} graded`:"awaiting results") +
+    tile("Net units", unitsTxt, "ROI "+roiTxt, uclass);
+
+  const types=["spread","total","ml"];
+  $("#typetiles").innerHTML = types.map(t=>{
+    const st=summarize(PICKS.filter(p=>p.type===t));
+    const u=!st.unitsKnown?"—":fmtU(st.units)+"u";
+    const uc=!st.unitsKnown?"u-flat":(st.units>0?"u-pos":st.units<0?"u-neg":"u-flat");
+    return `<div class="ttile"><div class="th"><span class="nm">${TYPE_LABEL[t]}</span><span class="pill ${t}">${st.n}</span></div>
+      <div class="mn"><span>${st.w}–${st.l}${st.pu?"–"+st.pu:""}</span>
+      <span>${st.hit==null?"—":st.hit.toFixed(0)+"% hit"}</span>
+      <span class="${uc}">${u}</span></div></div>`;
+  }).join("");
+}
+
+function renderRows(){
+  const list=PICKS.filter(p=>{
+    if(state.type!=="all" && p.type!==state.type) return false;
+    if(state.status==="pending" && p.status!=="pending") return false;
+    if(state.status==="graded" && p.status==="pending") return false;
+    return true;
+  });
+  if(!list.length){ $("#rows").innerHTML=`<tr><td colspan="9" class="empty">No picks match this filter.</td></tr>`; return; }
+  $("#rows").innerHTML=list.map(p=>{
+    const u=unitsFor(p); const uc=u==null?"u-flat":(u>0?"u-pos":u<0?"u-neg":"u-flat");
+    const oddsTxt=p.odds==null?'<span class="u-flat">—</span>':(p.odds>0?"+"+p.odds:p.odds);
+    const locked=p.type!=="total"?'':'';
+    return `<tr>
+      <td class="mono">${p.date.slice(5)}</td>
+      <td><div class="g-team">${p.game}</div><div class="g-meta">${p.kick}</div></td>
+      <td><span class="pill ${p.type}">${TYPE_LABEL[p.type]}</span></td>
+      <td class="pick">${p.pick}</td>
+      <td class="num conf">${p.conf}%</td>
+      <td class="num mono">${oddsTxt}</td>
+      <td><span class="st ${p.status}">${p.status==="pending"?"Pending":p.status}</span></td>
+      <td class="mono">${p.final?p.final:'<span class="u-flat">—</span>'}</td>
+      <td class="num uni ${uc}">${fmtU(u)}</td>
+    </tr>`;
+  }).join("");
+}
+
+function renderFoot(){
+  const s=summarize(PICKS);
+  $("#foot").innerHTML =
+    `Seeded ${s.n} recommendations from the Sep 5 board. Games grade automatically as finals come in on each update. `+
+    `Units assume a flat 1-unit bet; spreads and totals at −110 (a win returns +0.91u). `+
+    `Moneyline units show “—” until each price is captured at pull time. `+
+    `Research only — you place every bet yourself in the Saracen app.`;
+}
+
+/* filters */
+function wire(groupId,key){
+  document.querySelectorAll("#"+groupId+" .fbtn").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll("#"+groupId+" .fbtn").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); state[key]=b.dataset.v; renderRows();
+  }));
+}
+wire("f-type","type"); wire("f-status","status");
+
+/* theme */
+(function(){
+  const root=document.documentElement;
+  try{const s=localStorage.getItem("slr-theme"); if(s)root.setAttribute("data-theme",s);}catch(e){}
+  $("#theme").addEventListener("click",()=>{
+    const cur=root.getAttribute("data-theme");
+    const isDark=cur?cur==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+    const next=isDark?"light":"dark"; root.setAttribute("data-theme",next);
+    try{localStorage.setItem("slr-theme",next);}catch(e){}
+  });
+})();
+
+renderTiles(); renderRows(); renderFoot();
+</script>
+</body>
+</html>
