@@ -344,7 +344,7 @@ function boxHTML(g){
   if(g.err) return `<div class="box"><div class="box-note">Live box score unavailable right now.</div></div>`;
   const live=g.state==="in"?`<span class="live"><span class="dot"></span>LIVE</span>`:"";
   const head=`<div class="box-h"><span class="mu">${g.away.name} @ ${g.home.name}</span><span class="stt">${g.txt}</span>${live}</div>`;
-  if(!(g.home.stats||g.away.stats)) return `<div class="box">${head}<div class="box-note">Box score fills in once the game is underway.</div></div>`;
+  if(g.state==="pre"||!(g.home.stats||g.away.stats)) return `<div class="box">${head}<div class="box-note">Box score fills in once the game is underway.</div></div>`;
   const cmp=(a,b)=>{const x=+a,y=+b;return isNaN(x)||isNaN(y)?["",""]:x>y?["win",""]:y>x?["","win"]:["",""];};
   const sc=cmp(g.away.score,g.home.score);
   let grid=`<div class="bs"><div class="hd l">Stat</div><div class="hd">${g.away.abbr}</div><div class="hd">${g.home.abbr}</div>`;
