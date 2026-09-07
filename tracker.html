@@ -139,6 +139,16 @@
   .bs .lbl{color:var(--ink-2);font-size:12.5px}
   .bs .v{font-family:var(--f-mono);font-size:12.5px;text-align:right}
   .bs .v.win{color:var(--pos);font-weight:600}
+  .wtabs{display:flex;gap:4px;flex-wrap:wrap;margin:20px 0 2px;border-bottom:1px solid var(--border)}
+  .wtab{font-family:var(--f-body);font-weight:600;font-size:13px;border:0;background:transparent;color:var(--ink-2);padding:9px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .wtab:hover{color:var(--ink)}
+  .wtab.on{color:var(--accent);border-bottom-color:var(--accent)}
+  .weekbreak{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:16px}
+  .wk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+  .wk-card:hover{border-color:var(--accent)}
+  .wk-card .wk-n{font-family:var(--f-disp);font-weight:700;font-size:17px;margin-bottom:6px}
+  .wk-card .wk-rec{font-family:var(--f-mono);font-size:13px;color:var(--ink-2);display:flex;gap:12px;flex-wrap:wrap}
+  .wk-card .wk-open{font-size:11px;color:var(--ink-3);margin-top:8px}
 </style>
 </head>
 <body>
@@ -154,10 +164,14 @@
     </div>
   </div>
 
+  <div class="wtabs" id="weektabs"></div>
+
   <div class="tiles" id="tiles"></div>
   <div class="typetiles" id="typetiles"></div>
 
-  <div class="filters">
+  <div class="weekbreak" id="weekbreak" hidden></div>
+
+  <div class="filters" id="filtersRow">
     <div><span class="flab">Type</span>
       <span class="fgroup" id="f-type">
         <button class="fbtn on" data-v="all">All</button>
@@ -176,7 +190,7 @@
     </div>
   </div>
 
-  <div class="tablewrap">
+  <div class="tablewrap" id="tableCard">
     <table>
       <thead><tr>
         <th>Logged</th><th>Game</th><th>Type</th><th>Pick</th><th class="num">Conf</th>
@@ -200,94 +214,98 @@
    Units are computed from odds + status; ML picks show "—" until priced. */
 const PICKS = [
   // ── Spread & Moneyline (from the board's "The Bet" column) ──
-  {id:1,  date:"2026-09-05", game:"Oregon State @ Houston",        kick:"Sat 11:00a", type:"spread", pick:"Oregon State +20.5", conf:56, odds:-110, status:"win", final:"Houston 33, Oregon St 20", eid:"401856778"},
-  {id:15, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"ml",     pick:"LSU ML",             conf:84, odds:-375, status:"win", final:"LSU 51, Clemson 10", eid:"401856660"},
-  {id:16, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"ml",     pick:"Ole Miss ML",        conf:80, odds:-250, status:"win", final:"Ole Miss 41, Louisville 38", eid:"401856661"},
+  {id:1,  date:"2026-09-05", game:"Oregon State @ Houston",        kick:"Sat 11:00a", type:"spread", pick:"Oregon State +20.5", conf:56, odds:-110, status:"win", final:"Houston 33, Oregon St 20", eid:"401856778", week:1},
+  {id:15, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"ml",     pick:"LSU ML",             conf:84, odds:-375, status:"win", final:"LSU 51, Clemson 10", eid:"401856660", week:1},
+  {id:16, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"ml",     pick:"Ole Miss ML",        conf:80, odds:-250, status:"win", final:"Ole Miss 41, Louisville 38", eid:"401856661", week:1},
   // ── Totals (from the board's Total tab) ──
-  {id:17, date:"2026-09-05", game:"Ball State @ Ohio State",       kick:"Sat 11:30a", type:"total",  pick:"Under 56.5",         conf:64, odds:-110, status:"loss", final:"Ohio St 56, Ball St 3 (59)", eid:"401858432"},
-  {id:18, date:"2026-09-05", game:"Marshall @ Penn State",         kick:"Sat 2:30p",  type:"total",  pick:"Over 52.0",          conf:64, odds:-110, status:"loss", final:"Penn St 45, Marshall 0 (45)", eid:"401858434"},
-  {id:19, date:"2026-09-05", game:"East Carolina @ Alabama",       kick:"Sat 11:00a", type:"total",  pick:"Under 52.5",         conf:64, odds:-110, status:"loss", final:"Alabama 48, ECU 10 (58)", eid:"401856634"},
-  {id:20, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"total",  pick:"Under 50.5",         conf:64, odds:-110, status:"loss", final:"LSU 51, Clemson 10 (61)", eid:"401856660"},
-  {id:21, date:"2026-09-05", game:"Washington State @ Washington", kick:"Sun 3:00p",  type:"total",  pick:"Under 51.0",         conf:61, odds:-110, status:"win", final:"Washington 24, Wash St 10 (34)", eid:"401858437"},
-  {id:22, date:"2026-09-05", game:"Northern Illinois @ Iowa",      kick:"Sat 3:15p",  type:"total",  pick:"Over 44.5",          conf:59, odds:-110, status:"loss", final:"Iowa 40, N. Illinois 0 (40)", eid:"401858426"},
-  {id:23, date:"2026-09-05", game:"Western Michigan @ Michigan",   kick:"Sat 6:30p",  type:"total",  pick:"Under 49.5",         conf:58, odds:-110, status:"win", final:"Michigan 13, W. Michigan 12 (25)", eid:"401858428"},
-  {id:24, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"total",  pick:"Under 55.0",         conf:58, odds:-110, status:"loss", final:"Ole Miss 41, Louisville 38 (79)", eid:"401856661"},
-  {id:25, date:"2026-09-05", game:"SMU @ Florida State",           kick:"Mon 6:30p",  type:"total",  pick:"Under 53.5",         conf:56, odds:-110, status:"pending", final:null, eid:"401858212"},
-  {id:26, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"total",  pick:"Under 59.5",         conf:64, odds:-110, status:"loss", final:"Florida 66, FAU 21 (87)", eid:"401856637"},
-  {id:27, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"spread", pick:"Florida Atlantic +25.5", conf:52, odds:-110, status:"loss", final:"Florida 66, FAU 21", eid:"401856637"},
+  {id:17, date:"2026-09-05", game:"Ball State @ Ohio State",       kick:"Sat 11:30a", type:"total",  pick:"Under 56.5",         conf:64, odds:-110, status:"loss", final:"Ohio St 56, Ball St 3 (59)", eid:"401858432", week:1},
+  {id:18, date:"2026-09-05", game:"Marshall @ Penn State",         kick:"Sat 2:30p",  type:"total",  pick:"Over 52.0",          conf:64, odds:-110, status:"loss", final:"Penn St 45, Marshall 0 (45)", eid:"401858434", week:1},
+  {id:19, date:"2026-09-05", game:"East Carolina @ Alabama",       kick:"Sat 11:00a", type:"total",  pick:"Under 52.5",         conf:64, odds:-110, status:"loss", final:"Alabama 48, ECU 10 (58)", eid:"401856634", week:1},
+  {id:20, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"total",  pick:"Under 50.5",         conf:64, odds:-110, status:"loss", final:"LSU 51, Clemson 10 (61)", eid:"401856660", week:1},
+  {id:21, date:"2026-09-05", game:"Washington State @ Washington", kick:"Sun 3:00p",  type:"total",  pick:"Under 51.0",         conf:61, odds:-110, status:"win", final:"Washington 24, Wash St 10 (34)", eid:"401858437", week:1},
+  {id:22, date:"2026-09-05", game:"Northern Illinois @ Iowa",      kick:"Sat 3:15p",  type:"total",  pick:"Over 44.5",          conf:59, odds:-110, status:"loss", final:"Iowa 40, N. Illinois 0 (40)", eid:"401858426", week:1},
+  {id:23, date:"2026-09-05", game:"Western Michigan @ Michigan",   kick:"Sat 6:30p",  type:"total",  pick:"Under 49.5",         conf:58, odds:-110, status:"win", final:"Michigan 13, W. Michigan 12 (25)", eid:"401858428", week:1},
+  {id:24, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"total",  pick:"Under 55.0",         conf:58, odds:-110, status:"loss", final:"Ole Miss 41, Louisville 38 (79)", eid:"401856661", week:1},
+  {id:25, date:"2026-09-05", game:"SMU @ Florida State",           kick:"Mon 6:30p",  type:"total",  pick:"Under 53.5",         conf:56, odds:-110, status:"pending", final:null, eid:"401858212", week:1},
+  {id:26, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"total",  pick:"Under 59.5",         conf:64, odds:-110, status:"loss", final:"Florida 66, FAU 21 (87)", eid:"401856637", week:1},
+  {id:27, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"spread", pick:"Florida Atlantic +25.5", conf:52, odds:-110, status:"loss", final:"Florida 66, FAU 21", eid:"401856637", week:1},
 ];
 
 /* ── engine ── */
 const TYPE_LABEL={spread:"Spread",total:"Total",ml:"Moneyline",prop:"Prop"};
 const $=s=>document.querySelector(s);
-const state={type:"all",status:"all"};
+const state={type:"all",status:"all",view:"overall"};
+const WEEKS=[...new Set(PICKS.map(p=>p.week))].sort((a,b)=>b-a);
 
-function profitOnWin(odds){ if(odds==null||isNaN(odds)) return null; return odds<0 ? 100/Math.abs(odds) : odds/100; }
-function unitsFor(p){
-  if(p.status==="pending") return null;
-  if(p.status==="push") return 0;
-  if(p.status==="win"){ const w=profitOnWin(p.odds); return w==null?null:w; }
-  if(p.status==="loss") return -1;
-  return null;
-}
-function fmtU(u){ if(u==null) return "—"; const s=(u>0?"+":"")+u.toFixed(2); return s; }
-
+function profitOnWin(odds){ if(odds==null||isNaN(odds)) return null; return odds<0?100/Math.abs(odds):odds/100; }
+function unitsFor(p){ if(p.status==="pending")return null; if(p.status==="push")return 0; if(p.status==="win"){const w=profitOnWin(p.odds);return w==null?null:w;} if(p.status==="loss")return -1; return null; }
+function fmtU(u){ if(u==null)return "—"; return (u>0?"+":"")+u.toFixed(2); }
 function summarize(list){
   let w=0,l=0,pu=0,units=0,staked=0,unitsKnown=false;
   for(const p of list){
-    if(p.status==="win") w++; else if(p.status==="loss") l++; else if(p.status==="push") pu++;
+    if(p.status==="win")w++;else if(p.status==="loss")l++;else if(p.status==="push")pu++;
     const u=unitsFor(p);
-    if(u!=null && (p.status==="win"||p.status==="loss")){ units+=u; staked+=1; unitsKnown=true; }
-    else if(p.status==="push"){ /* stake returned */ }
+    if(u!=null&&(p.status==="win"||p.status==="loss")){units+=u;staked+=1;unitsKnown=true;}
   }
-  const graded=w+l, hit= graded? (w/graded*100):null;
-  const roi = staked? (units/staked*100):null;
+  const graded=w+l, hit=graded?(w/graded*100):null, roi=staked?(units/staked*100):null;
   return {w,l,pu,graded,hit,units,staked,roi,unitsKnown,n:list.length,pending:list.filter(p=>p.status==="pending").length};
 }
+function recStr(s){ return s.w+"–"+s.l+(s.pu?"–"+s.pu:""); }
+function scope(){ return state.view==="overall"?PICKS:PICKS.filter(p=>String(p.week)===String(state.view)); }
 
-function tile(lab,val,rec,cls){
-  return `<div class="tile"><div class="lab">${lab}</div><div class="val ${cls||''}">${val}</div><div class="rec">${rec||""}</div></div>`;
-}
-function renderTiles(){
-  const s=summarize(PICKS);
+function tile(lab,val,rec,cls){ return `<div class="tile"><div class="lab">${lab}</div><div class="val ${cls||''}">${val}</div><div class="rec">${rec||""}</div></div>`; }
+function renderTiles(list){
+  const s=summarize(list);
   const uclass=!s.unitsKnown?"u-flat":(s.units>0?"u-pos":s.units<0?"u-neg":"u-flat");
-  const recTxt=`${s.w}–${s.l}${s.pu?"–"+s.pu:""} · ${s.pending} pending`;
+  const ctx=state.view==="overall"?"all weeks":("Week "+state.view);
   const hitTxt=s.hit==null?"—":s.hit.toFixed(0)+"%";
   const unitsTxt=!s.unitsKnown?"—":fmtU(s.units)+"u";
   const roiTxt=s.roi==null?"—":(s.roi>0?"+":"")+s.roi.toFixed(1)+"%";
-  $("#tiles").innerHTML =
-    tile("Recommendations", s.n, recTxt) +
-    tile("Record (graded)", s.graded?`${s.w}–${s.l}${s.pu?"–"+s.pu:""}`:"0–0", "win–loss"+(s.pu?"–push":"")) +
-    tile("Hit rate", hitTxt, s.graded?`${s.w} of ${s.graded} graded`:"awaiting results") +
-    tile("Net units", unitsTxt, "ROI "+roiTxt, uclass);
-
+  $("#tiles").innerHTML=
+    tile("Recommendations",s.n,ctx+" · "+s.pending+" pending")+
+    tile("Record (graded)",s.graded?recStr(s):"0–0","win–loss"+(s.pu?"–push":""))+
+    tile("Hit rate",hitTxt,s.graded?(s.w+" of "+s.graded+" graded"):"awaiting results")+
+    tile("Net units",unitsTxt,"ROI "+roiTxt,uclass);
+}
+function renderTypeTiles(list){
   const types=["spread","total","ml","prop"];
-  $("#typetiles").innerHTML = types.map(t=>{
-    const st=summarize(PICKS.filter(p=>p.type===t));
+  $("#typetiles").innerHTML=types.map(t=>{
+    const st=summarize(list.filter(p=>p.type===t));
     const u=!st.unitsKnown?"—":fmtU(st.units)+"u";
     const uc=!st.unitsKnown?"u-flat":(st.units>0?"u-pos":st.units<0?"u-neg":"u-flat");
     return `<div class="ttile"><div class="th"><span class="nm">${TYPE_LABEL[t]}</span><span class="pill ${t}">${st.n}</span></div>
-      <div class="mn"><span>${st.w}–${st.l}${st.pu?"–"+st.pu:""}</span>
-      <span>${st.hit==null?"—":st.hit.toFixed(0)+"% hit"}</span>
-      <span class="${uc}">${u}</span></div></div>`;
+      <div class="mn"><span>${recStr(st)}</span><span>${st.hit==null?"—":st.hit.toFixed(0)+"% hit"}</span><span class="${uc}">${u}</span></div></div>`;
   }).join("");
 }
-
+function renderWeekTabs(){
+  $("#weektabs").innerHTML=
+    `<button class="wtab ${state.view==="overall"?"on":""}" data-w="overall">Overall</button>`+
+    WEEKS.map(w=>`<button class="wtab ${String(state.view)===String(w)?"on":""}" data-w="${w}">Week ${w}</button>`).join("");
+}
+function renderWeekBreak(){
+  $("#weekbreak").innerHTML=WEEKS.map(w=>{
+    const s=summarize(PICKS.filter(p=>p.week===w));
+    const uc=!s.unitsKnown?"u-flat":(s.units>0?"u-pos":s.units<0?"u-neg":"u-flat");
+    const u=!s.unitsKnown?"—":fmtU(s.units)+"u";
+    return `<button class="wk-card" data-w="${w}"><div class="wk-n">Week ${w}</div>
+      <div class="wk-rec"><span>${recStr(s)}</span><span>${s.hit==null?"—":s.hit.toFixed(0)+"%"}</span><span class="${uc}">${u}</span></div>
+      <div class="wk-open">${s.n} picks${s.pending?" · "+s.pending+" pending":""} — open →</div></button>`;
+  }).join("");
+}
 function renderRows(){
-  const list=PICKS.filter(p=>{
-    if(state.type!=="all" && p.type!==state.type) return false;
-    if(state.status==="pending" && p.status!=="pending") return false;
-    if(state.status==="graded" && p.status==="pending") return false;
+  const list=scope().filter(p=>{
+    if(state.type!=="all"&&p.type!==state.type)return false;
+    if(state.status==="pending"&&p.status!=="pending")return false;
+    if(state.status==="graded"&&p.status==="pending")return false;
     return true;
   });
   if(!list.length){ $("#rows").innerHTML=`<tr><td colspan="9" class="empty">No picks match this filter.</td></tr>`; return; }
   $("#rows").innerHTML=list.map(p=>{
     const u=unitsFor(p); const uc=u==null?"u-flat":(u>0?"u-pos":u<0?"u-neg":"u-flat");
     const oddsTxt=p.odds==null?'<span class="u-flat">—</span>':(p.odds>0?"+"+p.odds:p.odds);
-    const locked=p.type!=="total"?'':'';
     return `<tr id="row-${p.id}" class="prow" data-eid="${p.eid||''}">
       <td class="mono">${p.date.slice(5)}</td>
-      <td>${p.eid?`<span class="gtoggle"><span class="caret">\u25B8</span><span><div class="g-team">${p.game}</div><div class="g-meta">${p.kick}</div></span></span>`:`<div class="g-team">${p.game}</div><div class="g-meta">${p.kick}</div>`}</td>
+      <td>${p.eid?`<span class="gtoggle"><span class="caret">▸</span><span><div class="g-team">${p.game}</div><div class="g-meta">${p.kick}</div></span></span>`:`<div class="g-team">${p.game}</div><div class="g-meta">${p.kick}</div>`}</td>
       <td><span class="pill ${p.type}">${TYPE_LABEL[p.type]}</span></td>
       <td class="pick">${p.pick}</td>
       <td class="num conf">${p.conf}%</td>
@@ -297,37 +315,26 @@ function renderRows(){
       <td class="num uni ${uc}">${fmtU(u)}</td>
     </tr>`;
   }).join("");
+  applyLive();
 }
-
 function renderFoot(){
   const s=summarize(PICKS);
-  $("#foot").innerHTML =
-    `Seeded ${s.n} recommendations from the Sep 5 board. Games grade automatically as finals come in on each update. `+
-    `Units assume a flat 1-unit bet; spreads and totals at −110 (a win returns +0.91u). `+
-    `Moneyline units show “—” until each price is captured at pull time. `+
-    `Research only — you place every bet yourself in the Saracen app.`;
+  $("#foot").innerHTML=
+    "Tracking "+s.n+" recommendations across "+WEEKS.length+" week"+(WEEKS.length>1?"s":"")+" (each week runs Thursday–Monday). Games grade automatically as finals come in. "+
+    "Units assume a flat 1-unit bet; spreads and totals at −110 (a win returns +0.91u). Moneyline units show “—” until each price is captured. "+
+    "Research only — you place every bet yourself.";
 }
-
-/* filters */
-function wire(groupId,key){
-  document.querySelectorAll("#"+groupId+" .fbtn").forEach(b=>b.addEventListener("click",()=>{
-    document.querySelectorAll("#"+groupId+" .fbtn").forEach(x=>x.classList.remove("on"));
-    b.classList.add("on"); state[key]=b.dataset.v; renderRows();
-  }));
+function render(){
+  renderWeekTabs();
+  const isOverall=state.view==="overall";
+  renderTiles(scope());
+  renderTypeTiles(scope());
+  $("#weekbreak").hidden=!isOverall;
+  $("#filtersRow").hidden=isOverall;
+  $("#tableCard").hidden=isOverall;
+  if(isOverall){ renderWeekBreak(); } else { renderRows(); }
+  renderFoot();
 }
-wire("f-type","type"); wire("f-status","status");
-
-/* theme */
-(function(){
-  const root=document.documentElement;
-  try{const s=localStorage.getItem("slr-theme"); if(s)root.setAttribute("data-theme",s);}catch(e){}
-  $("#theme").addEventListener("click",()=>{
-    const cur=root.getAttribute("data-theme");
-    const isDark=cur?cur==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
-    const next=isDark?"light":"dark"; root.setAttribute("data-theme",next);
-    try{localStorage.setItem("slr-theme",next);}catch(e){}
-  });
-})();
 
 /* ESPN live scores + box score (client-side; static values stay as fallback) */
 const ESPN="https://site.api.espn.com/apis/site/v2/sports/football/college-football/";
@@ -368,15 +375,11 @@ $("#rows").addEventListener("click",async e=>{
   const g=await getSummary(eid);
   dr.innerHTML=`<td colspan="9">${boxHTML(g)}</td>`;
 });
-async function initLive(){
-  const dates=[...new Set(PICKS.map(p=>p.date.replace(/-/g,"")))];
-  const map=new Map();
-  await Promise.all(dates.map(d=>fetch(ESPN+"scoreboard?dates="+d+"&groups=80&limit=400").then(r=>r.json()).then(j=>{
-    for(const e of (j.events||[])){ const c=e.competitions[0];const h=c.competitors.find(z=>z.homeAway==="home");const a=c.competitors.find(z=>z.homeAway==="away");
-      map.set(e.id,{state:e.status.type.state,txt:e.status.type.shortDetail,na:a.team.shortDisplayName||a.team.abbreviation,nh:h.team.shortDisplayName||h.team.abbreviation,sa:a.score,sh:h.score,tot:(+a.score)+(+h.score)}); }
-  }).catch(()=>{})));
+let LIVE=null;
+function applyLive(){
+  if(!LIVE) return;
   for(const p of PICKS){
-    const g=map.get(p.eid); if(!g) continue; const row=document.getElementById("row-"+p.id); if(!row) continue;
+    const g=LIVE.get(p.eid); if(!g) continue; const row=document.getElementById("row-"+p.id); if(!row) continue;
     if(g.state==="in"){
       const fc=row.querySelector(".final-cell"),rc=row.querySelector(".result-cell");
       if(fc) fc.innerHTML=`${g.nh} ${g.sh}, ${g.na} ${g.sa} (${g.tot}) <span class="live"><span class="dot"></span>${g.txt}</span>`;
@@ -386,8 +389,40 @@ async function initLive(){
     }
   }
 }
+async function initLive(){
+  const dates=[...new Set(PICKS.map(p=>p.date.replace(/-/g,"")))];
+  const map=new Map();
+  await Promise.all(dates.map(d=>fetch(ESPN+"scoreboard?dates="+d+"&groups=80&limit=400").then(r=>r.json()).then(j=>{
+    for(const e of (j.events||[])){ const c=e.competitions[0];const h=c.competitors.find(z=>z.homeAway==="home");const a=c.competitors.find(z=>z.homeAway==="away");
+      map.set(e.id,{state:e.status.type.state,txt:e.status.type.shortDetail,na:a.team.shortDisplayName||a.team.abbreviation,nh:h.team.shortDisplayName||h.team.abbreviation,sa:a.score,sh:h.score,tot:(+a.score)+(+h.score)}); }
+  }).catch(()=>{})));
+  LIVE=map; applyLive();
+}
 
-renderTiles(); renderRows(); renderFoot(); initLive();
+/* wiring */
+$("#weektabs").addEventListener("click",e=>{const b=e.target.closest(".wtab");if(!b)return; state.view=b.dataset.w==="overall"?"overall":+b.dataset.w; render();});
+$("#weekbreak").addEventListener("click",e=>{const b=e.target.closest(".wk-card");if(!b)return; state.view=+b.dataset.w; render();});
+function wire(groupId,key){
+  document.querySelectorAll("#"+groupId+" .fbtn").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll("#"+groupId+" .fbtn").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); state[key]=b.dataset.v; renderRows();
+  }));
+}
+wire("f-type","type"); wire("f-status","status");
+
+/* theme */
+(function(){
+  const root=document.documentElement;
+  try{const s=localStorage.getItem("slr-theme"); if(s)root.setAttribute("data-theme",s);}catch(e){}
+  $("#theme").addEventListener("click",()=>{
+    const cur=root.getAttribute("data-theme");
+    const isDark=cur?cur==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+    const next=isDark?"light":"dark"; root.setAttribute("data-theme",next);
+    try{localStorage.setItem("slr-theme",next);}catch(e){}
+  });
+})();
+
+render(); initLive();
 </script>
 </body>
 </html>
