@@ -116,6 +116,28 @@
   .foot{color:var(--ink-3);font-size:12px;margin-top:18px;line-height:1.6}
   .empty{padding:40px;text-align:center;color:var(--ink-3)}
   .lockmark{font-size:10px;color:var(--warn);font-weight:600}
+  /* box score expander + live */
+  .gtoggle{display:inline-flex;align-items:flex-start;gap:8px;cursor:pointer;user-select:none}
+  .gtoggle:hover .g-team{color:var(--accent)}
+  .caret{color:var(--ink-3);font-size:10px;line-height:1.7;transition:transform .15s;display:inline-block}
+  tr.open .caret{transform:rotate(90deg);color:var(--accent)}
+  .live{font-size:9.5px;font-weight:700;letter-spacing:.04em;color:var(--neg);border:1px solid var(--neg);border-radius:4px;padding:1px 5px;white-space:nowrap}
+  .live .dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--neg);margin-right:4px;animation:pulse 1.4s infinite;vertical-align:middle}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .st.livep{background:var(--neg);color:#fff}
+  tr.detailrow>td{padding:0;background:var(--surface-2)}
+  .box{padding:14px 16px 16px}
+  .box-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .box-h .mu{font-family:var(--f-disp);font-weight:600;font-size:15px}
+  .box-h .stt{font-size:11px;font-family:var(--f-mono);color:var(--ink-3)}
+  .box-note{color:var(--ink-3);font-size:12.5px}
+  .box-load{color:var(--ink-3);font-size:12.5px;padding:6px 0}
+  .bs{display:grid;grid-template-columns:1fr 64px 64px;gap:3px 10px;max-width:340px;align-items:center}
+  .bs .hd{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600;text-align:right;padding-bottom:5px;border-bottom:1px solid var(--border-2)}
+  .bs .hd.l{text-align:left}
+  .bs .lbl{color:var(--ink-2);font-size:12.5px}
+  .bs .v{font-family:var(--f-mono);font-size:12.5px;text-align:right}
+  .bs .v.win{color:var(--pos);font-weight:600}
 </style>
 </head>
 <body>
@@ -123,7 +145,7 @@
   <div class="top">
     <div>
       <h1>Results Tracker</h1>
-      <p class="sub">Every recommendation over 55% confidence, locked at kickoff and graded against the final result. Spreads and totals are priced at −110; moneyline prices are added at pull time.</p>
+      <p class="sub">Every recommendation over 55% confidence, locked at kickoff and graded against the final result. Spreads and totals are priced at −110; moneyline prices are added at pull time. Open any game for its live or final box score.</p>
     </div>
     <div class="toolbar">
       <a class="btn btn-primary" href="./index.html">← Board</a>
@@ -176,21 +198,21 @@
    Units are computed from odds + status; ML picks show "—" until priced. */
 const PICKS = [
   // ── Spread & Moneyline (from the board's "The Bet" column) ──
-  {id:1,  date:"2026-09-05", game:"Oregon State @ Houston",        kick:"Sat 11:00a", type:"spread", pick:"Oregon State +20.5", conf:56, odds:-110, status:"win", final:"Houston 33, Oregon St 20"},
-  {id:15, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"ml",     pick:"LSU ML",             conf:84, odds:-375, status:"win", final:"LSU 51, Clemson 10"},
-  {id:16, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"ml",     pick:"Ole Miss ML",        conf:80, odds:-250, status:"win", final:"Ole Miss 41, Louisville 38"},
+  {id:1,  date:"2026-09-05", game:"Oregon State @ Houston",        kick:"Sat 11:00a", type:"spread", pick:"Oregon State +20.5", conf:56, odds:-110, status:"win", final:"Houston 33, Oregon St 20", eid:"401856778"},
+  {id:15, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"ml",     pick:"LSU ML",             conf:84, odds:-375, status:"win", final:"LSU 51, Clemson 10", eid:"401856660"},
+  {id:16, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"ml",     pick:"Ole Miss ML",        conf:80, odds:-250, status:"win", final:"Ole Miss 41, Louisville 38", eid:"401856661"},
   // ── Totals (from the board's Total tab) ──
-  {id:17, date:"2026-09-05", game:"Ball State @ Ohio State",       kick:"Sat 11:30a", type:"total",  pick:"Under 56.5",         conf:64, odds:-110, status:"loss", final:"Ohio St 56, Ball St 3 (59)"},
-  {id:18, date:"2026-09-05", game:"Marshall @ Penn State",         kick:"Sat 2:30p",  type:"total",  pick:"Over 52.0",          conf:64, odds:-110, status:"loss", final:"Penn St 45, Marshall 0 (45)"},
-  {id:19, date:"2026-09-05", game:"East Carolina @ Alabama",       kick:"Sat 11:00a", type:"total",  pick:"Under 52.5",         conf:64, odds:-110, status:"loss", final:"Alabama 48, ECU 10 (58)"},
-  {id:20, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"total",  pick:"Under 50.5",         conf:64, odds:-110, status:"loss", final:"LSU 51, Clemson 10 (61)"},
-  {id:21, date:"2026-09-05", game:"Washington State @ Washington", kick:"Sun 3:00p",  type:"total",  pick:"Under 51.0",         conf:61, odds:-110, status:"win", final:"Washington 24, Wash St 10 (34)"},
-  {id:22, date:"2026-09-05", game:"Northern Illinois @ Iowa",      kick:"Sat 3:15p",  type:"total",  pick:"Over 44.5",          conf:59, odds:-110, status:"loss", final:"Iowa 40, N. Illinois 0 (40)"},
-  {id:23, date:"2026-09-05", game:"Western Michigan @ Michigan",   kick:"Sat 6:30p",  type:"total",  pick:"Under 49.5",         conf:58, odds:-110, status:"win", final:"Michigan 13, W. Michigan 12 (25)"},
-  {id:24, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"total",  pick:"Under 55.0",         conf:58, odds:-110, status:"loss", final:"Ole Miss 41, Louisville 38 (79)"},
-  {id:25, date:"2026-09-05", game:"SMU @ Florida State",           kick:"Mon 6:30p",  type:"total",  pick:"Under 53.5",         conf:56, odds:-110, status:"pending", final:null},
-  {id:26, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"total",  pick:"Under 59.5",         conf:64, odds:-110, status:"loss", final:"Florida 66, FAU 21 (87)"},
-  {id:27, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"spread", pick:"Florida Atlantic +25.5", conf:52, odds:-110, status:"loss", final:"Florida 66, FAU 21"},
+  {id:17, date:"2026-09-05", game:"Ball State @ Ohio State",       kick:"Sat 11:30a", type:"total",  pick:"Under 56.5",         conf:64, odds:-110, status:"loss", final:"Ohio St 56, Ball St 3 (59)", eid:"401858432"},
+  {id:18, date:"2026-09-05", game:"Marshall @ Penn State",         kick:"Sat 2:30p",  type:"total",  pick:"Over 52.0",          conf:64, odds:-110, status:"loss", final:"Penn St 45, Marshall 0 (45)", eid:"401858434"},
+  {id:19, date:"2026-09-05", game:"East Carolina @ Alabama",       kick:"Sat 11:00a", type:"total",  pick:"Under 52.5",         conf:64, odds:-110, status:"loss", final:"Alabama 48, ECU 10 (58)", eid:"401856634"},
+  {id:20, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"total",  pick:"Under 50.5",         conf:64, odds:-110, status:"loss", final:"LSU 51, Clemson 10 (61)", eid:"401856660"},
+  {id:21, date:"2026-09-05", game:"Washington State @ Washington", kick:"Sun 3:00p",  type:"total",  pick:"Under 51.0",         conf:61, odds:-110, status:"win", final:"Washington 24, Wash St 10 (34)", eid:"401858437"},
+  {id:22, date:"2026-09-05", game:"Northern Illinois @ Iowa",      kick:"Sat 3:15p",  type:"total",  pick:"Over 44.5",          conf:59, odds:-110, status:"loss", final:"Iowa 40, N. Illinois 0 (40)", eid:"401858426"},
+  {id:23, date:"2026-09-05", game:"Western Michigan @ Michigan",   kick:"Sat 6:30p",  type:"total",  pick:"Under 49.5",         conf:58, odds:-110, status:"win", final:"Michigan 13, W. Michigan 12 (25)", eid:"401858428"},
+  {id:24, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"total",  pick:"Under 55.0",         conf:58, odds:-110, status:"loss", final:"Ole Miss 41, Louisville 38 (79)", eid:"401856661"},
+  {id:25, date:"2026-09-05", game:"SMU @ Florida State",           kick:"Mon 6:30p",  type:"total",  pick:"Under 53.5",         conf:56, odds:-110, status:"pending", final:null, eid:"401858212"},
+  {id:26, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"total",  pick:"Under 59.5",         conf:64, odds:-110, status:"loss", final:"Florida 66, FAU 21 (87)", eid:"401856637"},
+  {id:27, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"spread", pick:"Florida Atlantic +25.5", conf:52, odds:-110, status:"loss", final:"Florida 66, FAU 21", eid:"401856637"},
 ];
 
 /* ── engine ── */
@@ -261,15 +283,15 @@ function renderRows(){
     const u=unitsFor(p); const uc=u==null?"u-flat":(u>0?"u-pos":u<0?"u-neg":"u-flat");
     const oddsTxt=p.odds==null?'<span class="u-flat">—</span>':(p.odds>0?"+"+p.odds:p.odds);
     const locked=p.type!=="total"?'':'';
-    return `<tr>
+    return `<tr id="row-${p.id}" class="prow" data-eid="${p.eid||''}">
       <td class="mono">${p.date.slice(5)}</td>
-      <td><div class="g-team">${p.game}</div><div class="g-meta">${p.kick}</div></td>
+      <td>${p.eid?`<span class="gtoggle"><span class="caret">\u25B8</span><span><div class="g-team">${p.game}</div><div class="g-meta">${p.kick}</div></span></span>`:`<div class="g-team">${p.game}</div><div class="g-meta">${p.kick}</div>`}</td>
       <td><span class="pill ${p.type}">${TYPE_LABEL[p.type]}</span></td>
       <td class="pick">${p.pick}</td>
       <td class="num conf">${p.conf}%</td>
       <td class="num mono">${oddsTxt}</td>
-      <td><span class="st ${p.status}">${p.status==="pending"?"Pending":p.status}</span></td>
-      <td class="mono">${p.final?p.final:'<span class="u-flat">—</span>'}</td>
+      <td class="result-cell"><span class="st ${p.status}">${p.status==="pending"?"Pending":p.status}</span></td>
+      <td class="mono final-cell">${p.final?p.final:'<span class="u-flat">—</span>'}</td>
       <td class="num uni ${uc}">${fmtU(u)}</td>
     </tr>`;
   }).join("");
@@ -305,7 +327,65 @@ wire("f-type","type"); wire("f-status","status");
   });
 })();
 
-renderTiles(); renderRows(); renderFoot();
+/* ESPN live scores + box score (client-side; static values stay as fallback) */
+const ESPN="https://site.api.espn.com/apis/site/v2/sports/football/college-football/";
+const _sum=new Map();
+function _sv(t,l){const x=(t.statistics||[]).find(z=>(z.label||z.name)===l);return x?x.displayValue:"—";}
+function _parse(sj){
+  const comp=sj.header&&sj.header.competitions&&sj.header.competitions[0];
+  const bt=(sj.boxscore&&sj.boxscore.teams)||[];
+  const side=ha=>{const c=comp&&comp.competitors.find(z=>z.homeAway===ha);const b=bt.find(z=>z.homeAway===ha);
+    return {abbr:(c&&c.team.abbreviation)||(b&&b.team.abbreviation)||"",name:(c&&(c.team.shortDisplayName||c.team.displayName))||(b&&b.team.displayName)||"",score:c?c.score:"",
+      stats:b?{ty:_sv(b,"Total Yards"),pa:_sv(b,"Passing"),ru:_sv(b,"Rushing"),to:_sv(b,"Turnovers"),td:_sv(b,"3rd down efficiency"),po:_sv(b,"Possession")}:null};};
+  return {state:comp?comp.status.type.state:"pre",txt:comp?(comp.status.type.shortDetail||comp.status.type.detail):"",away:side("away"),home:side("home")};
+}
+function getSummary(eid){ if(!_sum.has(eid)){ _sum.set(eid, fetch(ESPN+"summary?event="+eid).then(r=>r.json()).then(_parse).catch(()=>({err:true}))); } return _sum.get(eid); }
+function boxHTML(g){
+  if(g.err) return `<div class="box"><div class="box-note">Live box score unavailable right now.</div></div>`;
+  const live=g.state==="in"?`<span class="live"><span class="dot"></span>LIVE</span>`:"";
+  const head=`<div class="box-h"><span class="mu">${g.away.name} @ ${g.home.name}</span><span class="stt">${g.txt}</span>${live}</div>`;
+  if(!(g.home.stats||g.away.stats)) return `<div class="box">${head}<div class="box-note">Box score fills in once the game is underway.</div></div>`;
+  const cmp=(a,b)=>{const x=+a,y=+b;return isNaN(x)||isNaN(y)?["",""]:x>y?["win",""]:y>x?["","win"]:["",""];};
+  const sc=cmp(g.away.score,g.home.score);
+  let grid=`<div class="bs"><div class="hd l">Stat</div><div class="hd">${g.away.abbr}</div><div class="hd">${g.home.abbr}</div>`;
+  grid+=`<div class="lbl">Score</div><div class="v ${sc[0]}">${g.away.score}</div><div class="v ${sc[1]}">${g.home.score}</div>`;
+  const R=[["Total yards","ty"],["Passing yds","pa"],["Rushing yds","ru"],["Turnovers","to"],["3rd down","td"],["Time of poss.","po"]];
+  for(const rr of R){ const av=g.away.stats?g.away.stats[rr[1]]:"—",hv=g.home.stats?g.home.stats[rr[1]]:"—"; grid+=`<div class="lbl">${rr[0]}</div><div class="v">${av}</div><div class="v">${hv}</div>`; }
+  grid+=`</div>`;
+  return `<div class="box">${head}${grid}</div>`;
+}
+$("#rows").addEventListener("click",async e=>{
+  const t=e.target.closest(".gtoggle"); if(!t) return;
+  const tr=t.closest("tr"); const eid=tr.dataset.eid; if(!eid) return;
+  const nx=tr.nextElementSibling;
+  if(nx&&nx.classList.contains("detailrow")){ nx.remove(); tr.classList.remove("open"); return; }
+  tr.classList.add("open");
+  const dr=document.createElement("tr"); dr.className="detailrow";
+  dr.innerHTML=`<td colspan="9"><div class="box-load">Loading box score…</div></td>`;
+  tr.after(dr);
+  const g=await getSummary(eid);
+  dr.innerHTML=`<td colspan="9">${boxHTML(g)}</td>`;
+});
+async function initLive(){
+  const dates=[...new Set(PICKS.map(p=>p.date.replace(/-/g,"")))];
+  const map=new Map();
+  await Promise.all(dates.map(d=>fetch(ESPN+"scoreboard?dates="+d+"&groups=80&limit=400").then(r=>r.json()).then(j=>{
+    for(const e of (j.events||[])){ const c=e.competitions[0];const h=c.competitors.find(z=>z.homeAway==="home");const a=c.competitors.find(z=>z.homeAway==="away");
+      map.set(e.id,{state:e.status.type.state,txt:e.status.type.shortDetail,na:a.team.shortDisplayName||a.team.abbreviation,nh:h.team.shortDisplayName||h.team.abbreviation,sa:a.score,sh:h.score,tot:(+a.score)+(+h.score)}); }
+  }).catch(()=>{})));
+  for(const p of PICKS){
+    const g=map.get(p.eid); if(!g) continue; const row=document.getElementById("row-"+p.id); if(!row) continue;
+    if(g.state==="in"){
+      const fc=row.querySelector(".final-cell"),rc=row.querySelector(".result-cell");
+      if(fc) fc.innerHTML=`${g.nh} ${g.sh}, ${g.na} ${g.sa} (${g.tot}) <span class="live"><span class="dot"></span>${g.txt}</span>`;
+      if(rc && p.status==="pending") rc.innerHTML=`<span class="st livep">Live</span>`;
+    } else if(g.state==="post" && !p.final){
+      const fc=row.querySelector(".final-cell"); if(fc) fc.innerHTML=`${g.nh} ${g.sh}, ${g.na} ${g.sa} (${g.tot})`;
+    }
+  }
+}
+
+renderTiles(); renderRows(); renderFoot(); initLive();
 </script>
 </body>
 </html>
