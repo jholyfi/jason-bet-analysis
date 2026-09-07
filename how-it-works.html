@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bet Analysis &mdash; How It Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#f4f6f3; --surface:#ffffff; --surface-2:#f0f2ee; --raised:#ffffff;
+    --ink:#161d18; --ink-2:#4c5751; --ink-3:#7c877f;
+    --border:#e0e5df; --border-2:#cdd4cc;
+    --accent:#1c7a4b; --accent-ink:#ffffff; --accent-soft:#e4f2ea;
+    --market:#0e7ca0; --market-soft:#e0f2f8; --market-ink:#0a5c78;
+    --model:#b8600a; --model-soft:#fbeddb; --model-ink:#8a4707;
+    --pos:#1c7a4b; --neg:#b42318; --warn:#b8600a;
+    --shadow:0 1px 2px rgba(16,29,22,.06),0 4px 14px rgba(16,29,22,.05);
+    --r:10px; --r-sm:7px; --r-lg:16px;
+    --f-disp:"Barlow Semi Condensed",system-ui,sans-serif;
+    --f-body:"IBM Plex Sans",system-ui,sans-serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1210; --surface:#141b17; --surface-2:#101613; --raised:#1a221d;
+      --ink:#e9efe9; --ink-2:#a3b0a7; --ink-3:#6f7c73;
+      --border:#242e28; --border-2:#33403a;
+      --accent:#33c47a; --accent-ink:#052012; --accent-soft:#12281c;
+      --market:#3fc0e6; --market-soft:#0c2530; --market-ink:#8fd9ef;
+      --model:#f2a94e; --model-soft:#2c1e0e; --model-ink:#f7c98a;
+      --pos:#33c47a; --neg:#f2705f; --warn:#f2a94e;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1210; --surface:#141b17; --surface-2:#101613; --raised:#1a221d;
+    --ink:#e9efe9; --ink-2:#a3b0a7; --ink-3:#6f7c73;
+    --border:#242e28; --border-2:#33403a;
+    --accent:#33c47a; --accent-ink:#052012; --accent-soft:#12281c;
+    --market:#3fc0e6; --market-soft:#0c2530; --market-ink:#8fd9ef;
+    --model:#f2a94e; --model-soft:#2c1e0e; --model-ink:#f7c98a;
+    --pos:#33c47a; --neg:#f2705f; --warn:#f2a94e;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);
+    -webkit-font-smoothing:antialiased;line-height:1.55;font-size:14.5px}
+  .wrap{max-width:820px;margin:0 auto;padding:26px 20px 80px}
+  a{color:inherit}
+  code{font-family:var(--f-mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:5px;padding:1px 6px;color:var(--ink-2);white-space:nowrap}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  h1{font-family:var(--f-disp);font-weight:700;font-size:34px;letter-spacing:-.01em;margin:0 0 4px}
+  .sub{color:var(--ink-2);max-width:620px;margin:0}
+  .toolbar{display:flex;align-items:center;gap:8px}
+  .btn{font-family:var(--f-body);font-weight:600;font-size:13px;border:1px solid var(--border-2);
+    background:var(--surface);color:var(--ink);border-radius:var(--r-sm);padding:8px 12px;cursor:pointer;
+    text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn-primary:hover{color:var(--accent-ink);filter:brightness(1.05)}
+  .icon{width:34px;height:34px;justify-content:center;padding:0}
+  .intro{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    box-shadow:var(--shadow);padding:20px 22px;margin:22px 0 10px}
+  .intro h2{font-family:var(--f-disp);font-weight:700;font-size:20px;margin:0 0 8px}
+  .intro p{margin:0 0 10px;color:var(--ink-2)}
+  .intro p:last-child{margin-bottom:0}
+  .intro b{color:var(--ink);font-weight:600}
+  .formula{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:var(--r);padding:12px 14px;margin:12px 0;color:var(--ink);line-height:1.7}
+  .cards{margin-top:18px;display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-left-width:4px;border-radius:var(--r-lg);
+    box-shadow:var(--shadow);padding:20px 22px}
+  .card.spread{border-left-color:var(--market)}
+  .card.total{border-left-color:var(--accent)}
+  .card.ml{border-left-color:var(--model)}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+  .card-h h2{font-family:var(--f-disp);font-weight:700;font-size:21px;margin:0}
+  .pill{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+  .pill.spread{background:var(--market-soft);color:var(--market-ink)}
+  .pill.total{background:var(--accent-soft);color:var(--accent)}
+  .pill.ml{background:var(--model-soft);color:var(--model-ink)}
+  .tag{margin-left:auto;font-size:12px;color:var(--ink-3)}
+  .card p{margin:10px 0;color:var(--ink-2)}
+  .card b{color:var(--ink);font-weight:600}
+  .rule{display:flex;gap:10px;align-items:flex-start;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:var(--r);padding:11px 14px;margin:12px 0 4px;font-size:13.5px}
+  .rule .k{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+    flex:0 0 auto;padding-top:2px}
+  .rule .v{color:var(--ink)}
+  .steps{margin:8px 0;padding-left:20px;color:var(--ink-2)}
+  .steps li{margin:5px 0}
+  .steps b{color:var(--ink)}
+  .flags{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:640px){.flags{grid-template-columns:1fr}}
+  .flag{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:18px 20px}
+  .flag h3{font-family:var(--f-disp);font-weight:700;font-size:17px;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+  .flag.market h3 .dot{background:var(--market)}
+  .flag.model h3 .dot{background:var(--model)}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .flag p{margin:0;color:var(--ink-2);font-size:13.5px}
+  .flag b{color:var(--ink);font-weight:600}
+  .reading{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:18px 22px;margin-top:16px}
+  .reading h2{font-family:var(--f-disp);font-weight:700;font-size:19px;margin:0 0 8px}
+  .reading p{margin:8px 0;color:var(--ink-2)}
+  .reading b{color:var(--ink);font-weight:600}
+  .bands{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .band{font-family:var(--f-mono);font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px}
+  .band.hi{background:var(--accent-soft);color:var(--accent)}
+  .band.mid{background:var(--market-soft);color:var(--market-ink)}
+  .band.lo{background:var(--surface-2);color:var(--ink-3)}
+  .foot{color:var(--ink-3);font-size:12.5px;margin-top:22px;line-height:1.6;text-align:center}
+  .foot b{color:var(--ink-2);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>How the Picks Are Made</h1>
+      <p class="sub">Every recommendation on the board comes from the same stats model. Here is the logic behind each type of bet, in plain English.</p>
+    </div>
+    <div class="toolbar">
+      <a class="btn btn-primary" href="./index.html">&larr; Board</a>
+      <a class="btn" href="./tracker.html">Tracker</a>
+      <button class="btn icon" id="theme" title="Toggle theme" aria-label="Toggle theme">&#9680;</button>
+    </div>
+  </div>
+
+  <div class="intro">
+    <h2>The foundation: SP+ power ratings</h2>
+    <p>Every team carries an <b>SP+ rating</b> for its offense and its defense &mdash; a points-per-game measure of how good each unit is. The model turns those into an expected margin for the game:</p>
+    <div class="formula">projected margin = (home rating &minus; away rating) + 2.4 home-field points<br>&nbsp;&nbsp;&nbsp;&nbsp;(home-field = 0 at a neutral site)</div>
+    <p>That single projection drives everything: it becomes a <b>projected spread</b>, and the four offense/defense ratings combine into a <b>projected total</b>. Each of those is then compared with Saracen&rsquo;s posted number to find the edge.</p>
+    <p><b>Early-season caution:</b> in Weeks 1&ndash;2 the ratings still lean on preseason data, so the model deliberately trusts itself less &mdash; it demands a wider gap before it flags anything. That fade eases off and reaches full weight by about Week 5.</p>
+  </div>
+
+  <div class="cards">
+
+    <div class="card spread">
+      <div class="card-h"><span class="pill spread">Spread</span><h2>Against the spread (ATS)</h2><span class="tag">the default pick</span></div>
+      <p>A spread bet is on the <b>margin</b> &mdash; a favorite has to win by more than the number, an underdog can lose by less than it (or win outright). The model compares Saracen&rsquo;s spread to its own projected spread; the difference is the <b>edge</b>.</p>
+      <div class="rule"><span class="k">Rule</span><span class="v">Recommend a side when the edge is <b>at least 2.0 points</b> <i>and</i> the spread is <b>24 or fewer</b>. Huge blowout spreads are skipped &mdash; there the number is about garbage time, not a real matchup.</span></div>
+      <ul class="steps">
+        <li>Model likes the favorite more than the line &rarr; <b>bet the favorite</b>.</li>
+        <li>Model has the game closer than the line &rarr; <b>take the underdog + points</b>.</li>
+      </ul>
+      <p><b>Confidence</b> starts at 50% and rises with the size of the edge, but is held back on big spreads (over 14 points), where blowouts are noisier. It lands in roughly the <b>51&ndash;66%</b> range. If the line is also <b>Market Soft</b> (below), that&rsquo;s flagged as extra value.</p>
+    </div>
+
+    <div class="card total">
+      <div class="card-h"><span class="pill total">Total</span><h2>Over / Under (totals)</h2><span class="tag">the Total tab</span></div>
+      <p>A totals bet is on the <b>combined points</b> both teams score, versus a posted number. The model builds a projected total from the four SP+ offense and defense ratings, then compares it to Saracen&rsquo;s line.</p>
+      <div class="rule"><span class="k">Rule</span><span class="v">Lean a side when the projection differs from the line by <b>at least 2.0 points</b>. Projection higher than the line &rarr; <b>Over</b>; lower &rarr; <b>Under</b>.</span></div>
+      <p><b>Confidence</b> runs about <b>51&ndash;64%</b> &mdash; the wider the gap between projection and line, the higher it goes. Totals are worth a look even on blowout spreads, where the winner is obvious but the scoring pace still creates an edge.</p>
+    </div>
+
+    <div class="card ml">
+      <div class="card-h"><span class="pill ml">Moneyline</span><h2>Moneyline (pick the winner)</h2><span class="tag">when the spread is fair</span></div>
+      <p>A moneyline bet is simply on <b>who wins</b>, no spread involved. The model reaches for it when the spread looks efficient (no ATS edge) but it still likes one side to win the game.</p>
+      <p>It converts the projected margin into a <b>win probability</b> using a normal curve &mdash; that probability is the confidence you see.</p>
+      <div class="rule"><span class="k">Value rule</span><span class="v">Any favorite priced <b>&minus;1000 or worse</b> is dropped as <b>&ldquo;No value bet&rdquo;</b> &mdash; you&rsquo;d risk $1,000 to win $100, which isn&rsquo;t worth it even when the team is a near-lock. Payable-but-heavy favorites are shown with a note that the payout is small.</span></div>
+      <p>Because heavy chalk gets filtered out, the moneyline column is usually quiet &mdash; only genuinely priced games show a play.</p>
+    </div>
+
+  </div>
+
+  <div class="flags">
+    <div class="flag market">
+      <h3><span class="dot"></span>Market Soft</h3>
+      <p>Saracen&rsquo;s number is off the <b>national market consensus</b> (DraftKings, FanDuel, BetMGM, Caesars&hellip;). A small regional book moves slower, so a gap means Saracen is behind where the sharp market has settled. Flagged at a <b>1.0-point</b> gap or more. Activates once the national-odds feed is connected.</p>
+    </div>
+    <div class="flag model">
+      <h3><span class="dot"></span>Model Soft</h3>
+      <p>The line is off what the <b>game&rsquo;s stats</b> say &mdash; the &ldquo;emotional, not statistical&rdquo; play. It comes from the SP+ projection above; marquee-team, recency, and rivalry angles are noted as <i>context</i> but don&rsquo;t move the number. Flagged when line and model differ by a wider margin (about <b>3.75 points</b> right now, under the early-season fade).</p>
+    </div>
+  </div>
+
+  <div class="reading">
+    <h2>Reading the board</h2>
+    <p><b>Rank</b> &mdash; games are sorted by the two gaps added together (Market gap + Model gap). The bigger the combined disagreement, the higher a game sits.</p>
+    <p><b>Confidence bands</b> color-code how strong a pick is:</p>
+    <div class="bands"><span class="band hi">62%+ &nbsp;high</span><span class="band mid">55&ndash;61% &nbsp;medium</span><span class="band lo">under 55% &nbsp;low</span></div>
+    <p style="margin-top:12px">The <b>Results Tracker</b> logs every recommendation above 55% and grades it against the final score, so the model&rsquo;s record is kept honest over time.</p>
+  </div>
+
+  <p class="foot">
+    <b>Research layer only</b> &mdash; you place every bet yourself in the Saracen app. Bet only what you can afford to lose.
+  </p>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  try{var s=localStorage.getItem("slr-theme"); if(s)root.setAttribute("data-theme",s);}catch(e){}
+  document.getElementById("theme").addEventListener("click",function(){
+    var cur=root.getAttribute("data-theme");
+    var isDark=cur?cur==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+    var next=isDark?"light":"dark"; root.setAttribute("data-theme",next);
+    try{localStorage.setItem("slr-theme",next);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
