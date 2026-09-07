@@ -302,7 +302,7 @@
     <div class="seg" role="tablist" aria-label="Bet type" id="betSeg">
       <button role="tab" aria-selected="true" data-bet="spread">Spread</button>
       <button role="tab" aria-selected="false" data-bet="total">Total</button>
-      <button class="locked" data-bet="ml" tabindex="-1">Moneyline</button>
+      <button role="tab" aria-selected="false" data-bet="ml">Moneyline</button>
       <button role="tab" aria-selected="false" data-bet="props">Props</button>
       <button class="locked" data-bet="parlay" tabindex="-1">Parlay</button>
     </div>
@@ -452,6 +452,18 @@
   function renderKpis(inView){
     if(bet==="props"){ renderPropsKpis(); return; }
     const lgNote=league==="ALL"?"NFL + College":(league==="CFB"?"College":"NFL");
+    if(bet==="ml"){
+      let val=0,chalk=0,best=null;
+      inView.forEach(g=>{const c=compute(g),p=mlPick(g,c);
+        if(g.mlFav!=null&&g.mlFav<=-1000){chalk++;}
+        else if(p.cls==="ml"&&g.mlFav!=null){val++; if(!best||p.conf>best.conf)best={conf:p.conf,team:p.pillTeam};}});
+      kpiEl.innerHTML=
+        tile("","Games on board",inView.length,lgNote)+
+        tile("model","Value MLs",val,"priced, worth it")+
+        tile("","Too chalky",chalk,"-1000 or worse")+
+        tile("edge","Top winner",best?best.conf+"%":"—",best?best.team:"add ML prices");
+      return;
+    }
     if(bet==="total"){
       let over=0,under=0,bestEdge=0,bestPick="no total edge";
       inView.forEach(g=>{const p=totalPick(g);if(p.edge>0){(p.pillTeam.indexOf("Over")===0?over++:under++);}if(p.edge>bestEdge){bestEdge=p.edge;bestPick=p.pillTeam;}});
@@ -577,6 +589,10 @@
     return {txt:"Bet the <b>"+side+" "+line.toFixed(1)+"</b> — the stats project about "+proj.toFixed(1)+" points.",conf:conf,cls:"go",edge:e,pillTeam:side+" "+line.toFixed(1)};
   }
   function linesCell(g,c){
+    if(bet==="ml"){
+      const ml=g.mlFav;
+      return '<div class="lines"><span class="mkt-line"><span class="ll">ML</span> '+(ml==null?"\u2014":(ml>0?"+"+ml:ml))+'</span><span class="mkt-line"><span class="ll">Spread</span> '+g.fav+' '+fmt(g.sar)+'</span></div>';
+    }
     if(bet==="total"){
       return '<div class="lines"><span class="mkt-line"><span class="ll">Line</span> '+(has(g.total)?g.total.toFixed(1):"—")+'</span><span class="mkt-line"><span class="ll">Proj</span> '+(g.tModel==null?"—":g.tModel.toFixed(1))+'</span></div>';
     }
@@ -592,6 +608,24 @@
       return '<div class="signals"><div class="sig'+(flag?" on model":"")+'"><span class="sig-dot model"></span>'+side+' <b>'+Math.abs(diff).toFixed(1)+'</b></div></div>';
     }
     return '<div class="signals">'+miniSoft("market",g,c)+miniSoft("model",g,c)+'</div>';
+  }
+  // ---- Moneyline (pick-the-winner for every game) ----
+  function mlPick(g,c){
+    const model=c.hasModel?c.model:null;
+    const absS=has(c.sar)?Math.abs(c.sar):(has(c.cons)?Math.abs(c.cons):null);
+    if(model==null&&absS==null) return {txt:"Type in the Saracen line to get a pick.",conf:null,cls:"na",edge:0,pillTeam:""};
+    const margin=model!=null?Math.abs(model):absS;
+    const conf=Math.max(52,Math.min(97,Math.round(nprob(margin/13.5)*100)));
+    const ml=g.mlFav;
+    if(ml==null){
+      return {txt:"Model likes <b>"+g.fav+"</b> to win (~"+conf+"% win prob) \u2014 no moneyline price captured; check your book for the number.",conf:conf,cls:"ml",pillTeam:g.fav+" ML",edge:0};
+    }
+    if(ml<=-1000){
+      return {txt:"<b>No value bet</b> \u2014 "+g.fav+" should win, but the moneyline is "+ml+" (-1000 or worse); you\u2019d risk too much to win too little. (Check the Total tab for a play here.)",conf:null,cls:"na",pillTeam:"No value",edge:0};
+    }
+    const oddsStr=(ml>0?"+":"")+ml;
+    const small=(absS!=null&&absS>=14)?" It\u2019s a heavy favorite, so the payout is small.":"";
+    return {txt:"Bet <b>"+g.fav+"</b> to win the game (moneyline) at <b>"+oddsStr+"</b> \u2014 just pick the winner."+small,conf:conf,cls:"ml",pillTeam:g.fav+" ML",odds:ml,edge:0};
   }
   // ---- Props (player props vs market lines; baked per game) ----
   function propsInView(){
@@ -655,7 +689,7 @@
       rowsEl.innerHTML='<tr><td colspan="7" class="emptyrow">'+msg+'</td></tr>';
       return;
     }
-    const getp=(g,c)=>bet==="total"?totalPick(g):pick(g,c);
+    const getp=(g,c)=>bet==="total"?totalPick(g):bet==="ml"?mlPick(g,c):pick(g,c);
     const list=inView.map(g=>({g,c:compute(g)})).sort((a,b)=>{const pa=getp(a.g,a.c),pb=getp(b.g,b.c);return (pb.edge-pa.edge)||((pb.conf==null?-1:pb.conf)-(pa.conf==null?-1:pa.conf));});
     rowsEl.innerHTML=list.map((x,idx)=>{
       const g=x.g,c=x.c,p=getp(g,c);
