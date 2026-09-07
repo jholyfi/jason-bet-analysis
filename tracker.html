@@ -84,6 +84,7 @@
   .pill.spread{background:var(--market-soft);color:var(--market-ink)}
   .pill.total{background:var(--accent-soft);color:var(--accent)}
   .pill.ml{background:var(--model-soft);color:var(--model-ink)}
+  .pill.prop{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--border-2)}
   /* filters */
   .filters{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:22px 0 10px}
   .fgroup{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px}
@@ -163,6 +164,7 @@
         <button class="fbtn" data-v="spread">Spread</button>
         <button class="fbtn" data-v="total">Total</button>
         <button class="fbtn" data-v="ml">Moneyline</button>
+        <button class="fbtn" data-v="prop">Props</button>
       </span>
     </div>
     <div><span class="flab">Status</span>
@@ -216,7 +218,7 @@ const PICKS = [
 ];
 
 /* ── engine ── */
-const TYPE_LABEL={spread:"Spread",total:"Total",ml:"Moneyline"};
+const TYPE_LABEL={spread:"Spread",total:"Total",ml:"Moneyline",prop:"Prop"};
 const $=s=>document.querySelector(s);
 const state={type:"all",status:"all"};
 
@@ -259,7 +261,7 @@ function renderTiles(){
     tile("Hit rate", hitTxt, s.graded?`${s.w} of ${s.graded} graded`:"awaiting results") +
     tile("Net units", unitsTxt, "ROI "+roiTxt, uclass);
 
-  const types=["spread","total","ml"];
+  const types=["spread","total","ml","prop"];
   $("#typetiles").innerHTML = types.map(t=>{
     const st=summarize(PICKS.filter(p=>p.type===t));
     const u=!st.unitsKnown?"—":fmtU(st.units)+"u";

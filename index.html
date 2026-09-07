@@ -255,6 +255,25 @@
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  /* props view */
+  .pv-note{background:var(--model-soft);border:1px solid color-mix(in srgb,var(--model) 30%,transparent);
+    color:var(--model-ink);border-radius:var(--r);padding:11px 14px;margin-bottom:16px;font-size:12.5px;line-height:1.5}
+  .pv-empty{padding:34px 16px;text-align:center;color:var(--ink-3);font-size:13.5px;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface)}
+  .pv-game{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+  .pv-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--border)}
+  .pv-mu{font-family:var(--f-disp);font-weight:700;font-size:17px}
+  .pv-meta{font-size:11.5px;color:var(--ink-3);font-family:var(--f-mono)}
+  .pv-tbl{border-collapse:collapse;width:100%;min-width:560px}
+  .pv-tbl th{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+  .pv-tbl td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13.5px}
+  .pv-tbl tr:last-child td{border-bottom:0}
+  .pv-tbl th.num,.pv-tbl td.num{text-align:right}
+  .pv-tbl td.mono{font-family:var(--f-mono)}
+  .pv-pl{font-weight:600}
+  .pv-pos{font-size:11px;color:var(--ink-3);font-weight:500;font-family:var(--f-mono)}
+  .pv-lean{font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px}
+  .pv-lean.lean-over{background:var(--accent-soft);color:var(--accent)}
+  .pv-lean.lean-under{background:var(--market-soft);color:var(--market-ink)}
 </style>
 
 <div class="wrap">
@@ -284,7 +303,7 @@
       <button role="tab" aria-selected="true" data-bet="spread">Spread</button>
       <button role="tab" aria-selected="false" data-bet="total">Total</button>
       <button class="locked" data-bet="ml" tabindex="-1">Moneyline</button>
-      <button class="locked" data-bet="props" tabindex="-1">Props</button>
+      <button role="tab" aria-selected="false" data-bet="props">Props</button>
       <button class="locked" data-bet="parlay" tabindex="-1">Parlay</button>
     </div>
     <span class="seg-label">Day</span>
@@ -319,6 +338,8 @@
       </table>
     </div>
   </div>
+
+  <div class="propsview" id="propsView" hidden></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -351,6 +372,30 @@
     {lg:"CFB",away:"SMU",home:"Florida State",fav:"SMU",dog:"Florida State",kick:"Mon 6:30p",sar:-3,cons:-3,total:53.5,model:-0.5,tModel:51.5,tv:"ESPN",cues:["marquee","recency"],fOff:32.5,fOffR:22,fDef:20.1,fDefR:29,dOff:29.8,dOffR:46,dDef:20.4,dDefR:30,advF:[0.11,0.4,1.36,-0.08,0.19,0.188],advD:[0.25,0.32,1.35,0.11,0.25,0.155],ko:"2026-09-07T23:30:00Z"}
   ];
 
+  // Player props: model projection vs market line (The Odds API). Baked per game at pull time.
+  const PROPS=[
+    {game:"SMU @ Florida State",away:"SMU",home:"Florida State",lg:"CFB",day:"Mon",eid:"401858212",kick:"Mon 6:30p",book:"FanDuel / market consensus",list:[
+      {pl:"Landen Thomas",pos:"TE",tm:"FSU",mkt:"Receptions",line:1.5,proj:0.4,lean:"",conf:null},
+      {pl:"Jayvan Boggs",pos:"WR",tm:"FSU",mkt:"Receptions",line:1.5,proj:0.7,lean:"",conf:null},
+      {pl:"Kevin Jennings",pos:"QB",tm:"SMU",mkt:"Rush Yds",line:8.5,proj:4,lean:"",conf:null},
+      {pl:"Landen Thomas",pos:"TE",tm:"FSU",mkt:"Rec Yds",line:8.5,proj:4.4,lean:"",conf:null},
+      {pl:"Jalen Cooper",pos:"WR",tm:"SMU",mkt:"Receptions",line:2.5,proj:1.4,lean:"",conf:null},
+      {pl:"Ashton Daniels",pos:"QB",tm:"FSU",mkt:"Pass TDs",line:1.5,proj:0.9,lean:"UNDER",conf:56},
+      {pl:"Jayvan Boggs",pos:"WR",tm:"FSU",mkt:"Rec Yds",line:18.5,proj:11.2,lean:"",conf:null},
+      {pl:"Micahi Danzy",pos:"WR",tm:"FSU",mkt:"Receptions",line:3.5,proj:2.4,lean:"",conf:null},
+      {pl:"Kevin Jennings",pos:"QB",tm:"SMU",mkt:"Pass TDs",line:1.5,proj:1.9,lean:"OVER",conf:54},
+      {pl:"Ashton Daniels",pos:"QB",tm:"FSU",mkt:"Rush Yds",line:33.5,proj:26.6,lean:"UNDER",conf:52},
+      {pl:"Jalen Cooper",pos:"WR",tm:"SMU",mkt:"Rec Yds",line:29.5,proj:23.9,lean:"UNDER",conf:51},
+      {pl:"Ousmane Kromah",pos:"RB",tm:"FSU",mkt:"Rush Yds",line:58.5,proj:48.1,lean:"UNDER",conf:51},
+      {pl:"Duce Robinson",pos:"WR",tm:"FSU",mkt:"Receptions",line:4.5,proj:3.8,lean:"UNDER",conf:50},
+      {pl:"Yamir Knight",pos:"WR",tm:"SMU",mkt:"Rec Yds",line:55.5,proj:47.4,lean:"UNDER",conf:50},
+      {pl:"Ashton Daniels",pos:"QB",tm:"FSU",mkt:"Pass Yds",line:202.5,proj:179.1,lean:"UNDER",conf:49},
+      {pl:"Yamir Knight",pos:"WR",tm:"SMU",mkt:"Receptions",line:4.5,proj:4,lean:"",conf:null},
+      {pl:"Duce Robinson",pos:"WR",tm:"FSU",mkt:"Rec Yds",line:67.5,proj:70.6,lean:"",conf:null},
+      {pl:"Micahi Danzy",pos:"WR",tm:"FSU",mkt:"Rec Yds",line:41.5,proj:42.9,lean:"",conf:null},
+      {pl:"Kevin Jennings",pos:"QB",tm:"SMU",mkt:"Pass Yds",line:267.5,proj:270.7,lean:"",conf:null}
+    ]}
+  ];
   const CUE_LABEL={marquee:"marquee",recency:"recency bias",rivalry:"rivalry/revenge",primetime:"primetime"};
   const TH={spread:{market:1.0,model:1.5,scale:6},total:{edge:2.0}};
   // Model engine — projected home spread from power ratings. Computes when SP+/EPA ratings load.
@@ -405,6 +450,7 @@
   }
 
   function renderKpis(inView){
+    if(bet==="props"){ renderPropsKpis(); return; }
     const lgNote=league==="ALL"?"NFL + College":(league==="CFB"?"College":"NFL");
     if(bet==="total"){
       let over=0,under=0,bestEdge=0,bestPick="no total edge";
@@ -547,9 +593,58 @@
     }
     return '<div class="signals">'+miniSoft("market",g,c)+miniSoft("model",g,c)+'</div>';
   }
+  // ---- Props (player props vs market lines; baked per game) ----
+  function propsInView(){
+    let out=[];
+    for(const P of PROPS){
+      if(league!=="ALL"&&P.lg!==league) continue;
+      if(day!=="ALL"&&P.day!==day) continue;
+      out=out.concat(P.list.map(p=>Object.assign({game:P.game},p)));
+    }
+    return out;
+  }
+  function renderPropsKpis(){
+    const all=propsInView();
+    const over=all.filter(p=>p.lean==="OVER").length;
+    const under=all.filter(p=>p.lean==="UNDER").length;
+    const top=all.filter(p=>p.lean&&p.conf).sort((a,b)=>b.conf-a.conf)[0];
+    kpiEl.innerHTML=
+      tile("","Props on board",all.length,"player props")+
+      tile("market","Over leans",over,"proj &gt; line")+
+      tile("model","Under leans",under,"proj &lt; line")+
+      tile("edge","Top lean",top?top.conf+"%":"—",top?(top.pl+" "+(top.lean==="OVER"?"o":"u")+top.line):"calibrating");
+  }
+  function renderProps(){
+    const pv=$("#propsView");
+    const games=PROPS.filter(P=>(league==="ALL"||P.lg===league)&&(day==="ALL"||P.day===day));
+    let html='<div class="pv-note"><b>Early-season model &mdash; directional only.</b> Projections use last season&rsquo;s per-game rates with a light opponent adjustment, so edges are noisy this early (roster turnover, tiny 2026 samples) and confidence stays capped until a few weeks of data sharpen it. Lines are FanDuel / market consensus via The Odds API &mdash; compare to your book before betting.</div>';
+    if(!games.length){ pv.innerHTML=html+'<div class="pv-empty">No props on the board for this filter yet. Props are pulled per game &mdash; ask me to pull a game and it shows up here.</div>'; return; }
+    html+=games.map(P=>{
+      const rows=P.list.slice().sort((a,b)=>(b.conf||0)-(a.conf||0)).map(p=>{
+        const edge=Math.round((p.proj-p.line)*10)/10;
+        const lc=p.lean==="OVER"?"lean-over":p.lean==="UNDER"?"lean-under":"";
+        return '<tr>'+
+          '<td class="pv-pl">'+p.pl+' <span class="pv-pos">'+p.pos+' &middot; '+p.tm+'</span></td>'+
+          '<td>'+p.mkt+'</td>'+
+          '<td class="num mono">'+p.line+'</td>'+
+          '<td class="num mono">'+p.proj+'</td>'+
+          '<td class="num mono">'+(edge>0?"+":"")+edge+'</td>'+
+          '<td>'+(p.lean?'<span class="pv-lean '+lc+'">'+p.lean+'</span>':'<span class="conf-na">&mdash;</span>')+'</td>'+
+          '<td class="num">'+(p.conf?confPill(p.conf):'<span class="conf-na">&mdash;</span>')+'</td>'+
+        '</tr>';
+      }).join("");
+      return '<div class="pv-game"><div class="pv-h"><span class="pv-mu">'+P.game+'</span><span class="pv-meta">'+P.kick+' &middot; '+P.book+'</span></div>'+
+        '<div class="board-scroll"><table class="pv-tbl"><thead><tr><th>Player</th><th>Prop</th><th class="num">Line</th><th class="num">Proj</th><th class="num">Edge</th><th>Lean</th><th class="num">Conf</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+    }).join("");
+    pv.innerHTML=html;
+  }
   function render(){
-    const inView=viewGames();
+    const isProps=bet==="props";
+    document.querySelector(".board").style.display=isProps?"none":"";
+    $("#propsView").hidden=!isProps;
+    const inView=isProps?[]:viewGames();
     renderKpis(inView);
+    if(isProps){ renderProps(); return; }
     const gone=GAMES.filter(started).length;
     const mn=$("#movedNote");
     if(mn){ if(gone>0){ mn.hidden=false; mn.innerHTML='\u{1F512} '+gone+(gone>1?' games have':' game has')+' kicked off \u2014 locked and moved to the <a href="./tracker.html">Results Tracker \u2192</a>'; } else { mn.hidden=true; } }
