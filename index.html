@@ -274,6 +274,25 @@
   .pv-lean{font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px}
   .pv-lean.lean-over{background:var(--accent-soft);color:var(--accent)}
   .pv-lean.lean-under{background:var(--market-soft);color:var(--market-ink)}
+  /* parlay view */
+  .pl-h{font-family:var(--f-disp);font-weight:700;font-size:15px;margin:18px 0 10px;color:var(--ink-2)}
+  .pl-h:first-child{margin-top:0}
+  .pl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:12px}
+  .pl-card.longshot{border-color:color-mix(in srgb,var(--model) 45%,transparent);background:var(--model-soft)}
+  .pl-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+  .pl-title{font-family:var(--f-disp);font-weight:700;font-size:16px}
+  .pl-odds{font-family:var(--f-mono);font-weight:600;font-size:18px;color:var(--accent)}
+  .pl-legs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  .pl-legs li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+  .pl-mkt{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px}
+  .pl-mkt.spread{background:var(--market-soft);color:var(--market-ink)}
+  .pl-mkt.total{background:var(--accent-soft);color:var(--accent)}
+  .pl-mkt.ml{background:var(--model-soft);color:var(--model-ink)}
+  .pl-gm{color:var(--ink-3);font-size:11.5px;font-family:var(--f-mono)}
+  .pl-lc{margin-left:auto;font-family:var(--f-mono);font-size:12px;color:var(--ink-2);font-weight:600}
+  .pl-foot{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12.5px;color:var(--ink-2)}
+  .pl-foot b{color:var(--ink)}
+  .pl-ev{color:var(--pos);font-weight:600} .pl-nev{color:var(--ink-3)}
 </style>
 
 <div class="wrap">
@@ -304,7 +323,7 @@
       <button role="tab" aria-selected="false" data-bet="total">Total</button>
       <button role="tab" aria-selected="false" data-bet="ml">Moneyline</button>
       <button role="tab" aria-selected="false" data-bet="props">Props</button>
-      <button class="locked" data-bet="parlay" tabindex="-1">Parlay</button>
+      <button role="tab" aria-selected="false" data-bet="parlay">Parlay</button>
     </div>
     <span class="seg-label">Day</span>
     <div class="seg" role="tablist" aria-label="Day" id="daySeg">
@@ -340,6 +359,8 @@
   </div>
 
   <div class="propsview" id="propsView" hidden></div>
+
+  <div class="propsview" id="parlayView" hidden></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -451,6 +472,7 @@
 
   function renderKpis(inView){
     if(bet==="props"){ renderPropsKpis(); return; }
+    if(bet==="parlay"){ renderParlayKpis(); return; }
     const lgNote=league==="ALL"?"NFL + College":(league==="CFB"?"College":"NFL");
     if(bet==="ml"){
       let val=0,chalk=0,best=null;
@@ -672,13 +694,68 @@
     }).join("");
     pv.innerHTML=html;
   }
+  // ---- Parlays (built from the board's best picks; one leg per game) ----
+  function amToDec(a){return a>0?1+a/100:1+100/Math.abs(a);}
+  function legPool(){
+    const pool=[];
+    for(const g of viewGames()){
+      const c=compute(g), cands=[];
+      const sp=pick(g,c);
+      if(sp.cls==="go") cands.push({pick:sp.pillTeam,mkt:"Spread",conf:sp.conf,dec:amToDec(-110)});
+      else if(sp.cls==="ml"&&sp.odds) cands.push({pick:sp.pillTeam,mkt:"ML",conf:sp.conf,dec:amToDec(sp.odds)});
+      const tp=totalPick(g);
+      if(tp.conf!=null) cands.push({pick:tp.pillTeam,mkt:"Total",conf:tp.conf,dec:amToDec(-110)});
+      if(cands.length){ cands.sort((a,b)=>b.conf-a.conf); const best=cands[0]; best.game=g.away+" @ "+g.home; pool.push(best); }
+    }
+    pool.sort((a,b)=>b.conf-a.conf);
+    return pool;
+  }
+  function parlayCalc(legs){
+    const dec=legs.reduce((a,l)=>a*l.dec,1);
+    const prob=legs.reduce((a,l)=>a*(l.conf/100),1);
+    const am=dec>=2?("+"+Math.round((dec-1)*100)):(""+Math.round(-100/(dec-1)));
+    return {dec,prob,am,implied:1/dec,ret:dec};
+  }
+  function parlayCard(title,legs,kind){
+    const m=parlayCalc(legs), ev=m.prob>m.implied;
+    const legHtml=legs.map(l=>'<li><span class="pl-mkt '+l.mkt.toLowerCase()+'">'+l.mkt+'</span> <b>'+l.pick+'</b> <span class="pl-gm">'+l.game+'</span> <span class="pl-lc">'+l.conf+'%</span></li>').join("");
+    return '<div class="pl-card '+(kind||'')+'"><div class="pl-top"><span class="pl-title">'+title+'</span><span class="pl-odds">'+m.am+'</span></div>'+
+      '<ul class="pl-legs">'+legHtml+'</ul>'+
+      '<div class="pl-foot"><span>Model hit chance <b>'+(m.prob*100).toFixed(m.prob<0.1?1:0)+'%</b></span>'+
+      '<span>1u returns <b>'+m.ret.toFixed(2)+'u</b></span>'+
+      '<span class="'+(ev?"pl-ev":"pl-nev")+'">'+(ev?"model +EV":"model -EV")+'</span></div></div>';
+  }
+  function renderParlay(){
+    const pv=$("#parlayView"), pool=legPool();
+    let html='<div class="pv-note"><b>Parlays multiply risk.</b> The odds shown are the true parlay price; &ldquo;model hit chance&rdquo; multiplies each leg&rsquo;s model confidence, which is optimistic &mdash; treat parlays as high-variance. Core plays stay at <b>2&ndash;3 legs</b> to actually hit; the weekly long shot is a <b>small-stake lottery ticket</b>.</div>';
+    if(pool.length<2){ pv.innerHTML=html+'<div class="pv-empty">Not enough board picks for a parlay yet ('+pool.length+' actionable). Parlays build from the day&rsquo;s leaned picks &mdash; they fill in when the slate is on the board.</div>'; return; }
+    let cards='<h3 class="pl-h">Core parlays &mdash; 2&ndash;3 legs</h3>';
+    cards+=parlayCard("2-leg",pool.slice(0,2));
+    if(pool.length>=3) cards+=parlayCard("3-leg",pool.slice(0,3));
+    cards+='<h3 class="pl-h">Weekly long shot &mdash; 6+ legs</h3>';
+    if(pool.length>=6){ const n=Math.min(pool.length,8); cards+=parlayCard(n+"-leg long shot",pool.slice(0,n),"longshot"); }
+    else cards+='<div class="pv-empty">The long shot needs 6+ actionable games ('+pool.length+' now) &mdash; it appears on the full weekend slate.</div>';
+    pv.innerHTML=html+cards;
+  }
+  function renderParlayKpis(){
+    const pool=legPool();
+    const three=pool.length>=3?parlayCalc(pool.slice(0,3)):null;
+    const ls=pool.length>=6?parlayCalc(pool.slice(0,Math.min(pool.length,8))):null;
+    kpiEl.innerHTML=
+      tile("","Legs available",pool.length,"one per game")+
+      tile("model","Best 3-leg",three?three.am:"—",three?(three.prob*100).toFixed(0)+"% model":"need 3 games")+
+      tile("","Long shot",ls?ls.am:"—",ls?(ls.prob*100).toFixed(1)+"% model":"need 6 games")+
+      tile("edge","Core cap","3 legs","long shot 6+");
+  }
   function render(){
-    const isProps=bet==="props";
-    document.querySelector(".board").style.display=isProps?"none":"";
+    const isProps=bet==="props", isParlay=bet==="parlay", special=isProps||isParlay;
+    document.querySelector(".board").style.display=special?"none":"";
     $("#propsView").hidden=!isProps;
-    const inView=isProps?[]:viewGames();
+    $("#parlayView").hidden=!isParlay;
+    const inView=special?[]:viewGames();
     renderKpis(inView);
     if(isProps){ renderProps(); return; }
+    if(isParlay){ renderParlay(); return; }
     const gone=GAMES.filter(started).length;
     const mn=$("#movedNote");
     if(mn){ if(gone>0){ mn.hidden=false; mn.innerHTML='\u{1F512} '+gone+(gone>1?' games have':' game has')+' kicked off \u2014 locked and moved to the <a href="./tracker.html">Results Tracker \u2192</a>'; } else { mn.hidden=true; } }
