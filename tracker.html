@@ -214,28 +214,30 @@
    Units are computed from odds + status; ML picks show "—" until priced. */
 const PICKS = [
   // ── Spread & Moneyline (from the board's "The Bet" column) ──
-  {id:1,  date:"2026-09-05", game:"Oregon State @ Houston",        kick:"Sat 11:00a", type:"spread", pick:"Oregon State +20.5", conf:56, odds:-110, status:"win", final:"Houston 33, Oregon St 20", eid:"401856778", week:1},
-  {id:15, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"ml",     pick:"LSU ML",             conf:84, odds:-375, status:"win", final:"LSU 51, Clemson 10", eid:"401856660", week:1},
-  {id:16, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"ml",     pick:"Ole Miss ML",        conf:80, odds:-250, status:"win", final:"Ole Miss 41, Louisville 38", eid:"401856661", week:1},
+  {id:1,  date:"2026-09-05", game:"Oregon State @ Houston",        kick:"Sat 11:00a", type:"spread", pick:"Oregon State +20.5", conf:56, odds:-110, status:"win", final:"Houston 33, Oregon St 20", eid:"401856778"},
+  {id:15, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"ml",     pick:"LSU ML",             conf:84, odds:-375, status:"win", final:"LSU 51, Clemson 10", eid:"401856660"},
+  {id:16, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"ml",     pick:"Ole Miss ML",        conf:80, odds:-250, status:"win", final:"Ole Miss 41, Louisville 38", eid:"401856661"},
   // ── Totals (from the board's Total tab) ──
-  {id:17, date:"2026-09-05", game:"Ball State @ Ohio State",       kick:"Sat 11:30a", type:"total",  pick:"Under 56.5",         conf:64, odds:-110, status:"loss", final:"Ohio St 56, Ball St 3 (59)", eid:"401858432", week:1},
-  {id:18, date:"2026-09-05", game:"Marshall @ Penn State",         kick:"Sat 2:30p",  type:"total",  pick:"Over 52.0",          conf:64, odds:-110, status:"loss", final:"Penn St 45, Marshall 0 (45)", eid:"401858434", week:1},
-  {id:19, date:"2026-09-05", game:"East Carolina @ Alabama",       kick:"Sat 11:00a", type:"total",  pick:"Under 52.5",         conf:64, odds:-110, status:"loss", final:"Alabama 48, ECU 10 (58)", eid:"401856634", week:1},
-  {id:20, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"total",  pick:"Under 50.5",         conf:64, odds:-110, status:"loss", final:"LSU 51, Clemson 10 (61)", eid:"401856660", week:1},
-  {id:21, date:"2026-09-05", game:"Washington State @ Washington", kick:"Sun 3:00p",  type:"total",  pick:"Under 51.0",         conf:61, odds:-110, status:"win", final:"Washington 24, Wash St 10 (34)", eid:"401858437", week:1},
-  {id:22, date:"2026-09-05", game:"Northern Illinois @ Iowa",      kick:"Sat 3:15p",  type:"total",  pick:"Over 44.5",          conf:59, odds:-110, status:"loss", final:"Iowa 40, N. Illinois 0 (40)", eid:"401858426", week:1},
-  {id:23, date:"2026-09-05", game:"Western Michigan @ Michigan",   kick:"Sat 6:30p",  type:"total",  pick:"Under 49.5",         conf:58, odds:-110, status:"win", final:"Michigan 13, W. Michigan 12 (25)", eid:"401858428", week:1},
-  {id:24, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"total",  pick:"Under 55.0",         conf:58, odds:-110, status:"loss", final:"Ole Miss 41, Louisville 38 (79)", eid:"401856661", week:1},
-  {id:25, date:"2026-09-05", game:"SMU @ Florida State",           kick:"Mon 6:30p",  type:"total",  pick:"Under 53.5",         conf:56, odds:-110, status:"pending", final:null, eid:"401858212", week:1},
-  {id:26, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"total",  pick:"Under 59.5",         conf:64, odds:-110, status:"loss", final:"Florida 66, FAU 21 (87)", eid:"401856637", week:1},
-  {id:27, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"spread", pick:"Florida Atlantic +25.5", conf:52, odds:-110, status:"loss", final:"Florida 66, FAU 21", eid:"401856637", week:1},
+  {id:17, date:"2026-09-05", game:"Ball State @ Ohio State",       kick:"Sat 11:30a", type:"total",  pick:"Under 56.5",         conf:64, odds:-110, status:"loss", final:"Ohio St 56, Ball St 3 (59)", eid:"401858432"},
+  {id:18, date:"2026-09-05", game:"Marshall @ Penn State",         kick:"Sat 2:30p",  type:"total",  pick:"Over 52.0",          conf:64, odds:-110, status:"loss", final:"Penn St 45, Marshall 0 (45)", eid:"401858434"},
+  {id:19, date:"2026-09-05", game:"East Carolina @ Alabama",       kick:"Sat 11:00a", type:"total",  pick:"Under 52.5",         conf:64, odds:-110, status:"loss", final:"Alabama 48, ECU 10 (58)", eid:"401856634"},
+  {id:20, date:"2026-09-05", game:"Clemson @ LSU",                 kick:"Sat 6:30p",  type:"total",  pick:"Under 50.5",         conf:64, odds:-110, status:"loss", final:"LSU 51, Clemson 10 (61)", eid:"401856660"},
+  {id:21, date:"2026-09-05", game:"Washington State @ Washington", kick:"Sun 3:00p",  type:"total",  pick:"Under 51.0",         conf:61, odds:-110, status:"win", final:"Washington 24, Wash St 10 (34)", eid:"401858437"},
+  {id:22, date:"2026-09-05", game:"Northern Illinois @ Iowa",      kick:"Sat 3:15p",  type:"total",  pick:"Over 44.5",          conf:59, odds:-110, status:"loss", final:"Iowa 40, N. Illinois 0 (40)", eid:"401858426"},
+  {id:23, date:"2026-09-05", game:"Western Michigan @ Michigan",   kick:"Sat 6:30p",  type:"total",  pick:"Under 49.5",         conf:58, odds:-110, status:"win", final:"Michigan 13, W. Michigan 12 (25)", eid:"401858428"},
+  {id:24, date:"2026-09-05", game:"Louisville @ Ole Miss",         kick:"Sun 6:30p",  type:"total",  pick:"Under 55.0",         conf:58, odds:-110, status:"loss", final:"Ole Miss 41, Louisville 38 (79)", eid:"401856661"},
+  {id:25, date:"2026-09-05", game:"SMU @ Florida State",           kick:"Mon 6:30p",  type:"total",  pick:"Under 53.5",         conf:56, odds:-110, status:"pending", final:null, eid:"401858212"},
+  {id:26, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"total",  pick:"Under 59.5",         conf:64, odds:-110, status:"loss", final:"Florida 66, FAU 21 (87)", eid:"401856637"},
+  {id:27, date:"2026-09-05", game:"Florida Atlantic @ Florida",    kick:"Sat 6:45p",  type:"spread", pick:"Florida Atlantic +25.5", conf:52, odds:-110, status:"loss", final:"Florida 66, FAU 21", eid:"401856637"},
 ];
 
 /* ── engine ── */
 const TYPE_LABEL={spread:"Spread",total:"Total",ml:"Moneyline",prop:"Prop"};
 const $=s=>document.querySelector(s);
 const state={type:"all",status:"all",view:"overall"};
-const WEEKS=[...new Set(PICKS.map(p=>p.week))].sort((a,b)=>b-a);
+function weekKey(dateStr){ const d=new Date(dateStr+"T12:00:00Z"); const day=d.getUTCDay(); const off=day>=4?day-4:day+3; d.setUTCDate(d.getUTCDate()-off); return d.toISOString().slice(0,10); }
+function weekLabel(key){ const M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; const s=new Date(key+"T12:00:00Z"), e=new Date(key+"T12:00:00Z"); e.setUTCDate(e.getUTCDate()+4); const sm=M[s.getUTCMonth()], em=M[e.getUTCMonth()]; return sm===em?(sm+" "+s.getUTCDate()+"–"+e.getUTCDate()):(sm+" "+s.getUTCDate()+" – "+em+" "+e.getUTCDate()); }
+const WEEKS=[...new Set(PICKS.map(p=>weekKey(p.date)))].sort().reverse();
 
 function profitOnWin(odds){ if(odds==null||isNaN(odds)) return null; return odds<0?100/Math.abs(odds):odds/100; }
 function unitsFor(p){ if(p.status==="pending")return null; if(p.status==="push")return 0; if(p.status==="win"){const w=profitOnWin(p.odds);return w==null?null:w;} if(p.status==="loss")return -1; return null; }
@@ -251,13 +253,13 @@ function summarize(list){
   return {w,l,pu,graded,hit,units,staked,roi,unitsKnown,n:list.length,pending:list.filter(p=>p.status==="pending").length};
 }
 function recStr(s){ return s.w+"–"+s.l+(s.pu?"–"+s.pu:""); }
-function scope(){ return state.view==="overall"?PICKS:PICKS.filter(p=>String(p.week)===String(state.view)); }
+function scope(){ return state.view==="overall"?PICKS:PICKS.filter(p=>weekKey(p.date)===state.view); }
 
 function tile(lab,val,rec,cls){ return `<div class="tile"><div class="lab">${lab}</div><div class="val ${cls||''}">${val}</div><div class="rec">${rec||""}</div></div>`; }
 function renderTiles(list){
   const s=summarize(list);
   const uclass=!s.unitsKnown?"u-flat":(s.units>0?"u-pos":s.units<0?"u-neg":"u-flat");
-  const ctx=state.view==="overall"?"all weeks":("Week "+state.view);
+  const ctx=state.view==="overall"?"all weeks":weekLabel(state.view);
   const hitTxt=s.hit==null?"—":s.hit.toFixed(0)+"%";
   const unitsTxt=!s.unitsKnown?"—":fmtU(s.units)+"u";
   const roiTxt=s.roi==null?"—":(s.roi>0?"+":"")+s.roi.toFixed(1)+"%";
@@ -280,14 +282,14 @@ function renderTypeTiles(list){
 function renderWeekTabs(){
   $("#weektabs").innerHTML=
     `<button class="wtab ${state.view==="overall"?"on":""}" data-w="overall">Overall</button>`+
-    WEEKS.map(w=>`<button class="wtab ${String(state.view)===String(w)?"on":""}" data-w="${w}">Week ${w}</button>`).join("");
+    WEEKS.map(w=>`<button class="wtab ${state.view===w?"on":""}" data-w="${w}">${weekLabel(w)}</button>`).join("");
 }
 function renderWeekBreak(){
   $("#weekbreak").innerHTML=WEEKS.map(w=>{
-    const s=summarize(PICKS.filter(p=>p.week===w));
+    const s=summarize(PICKS.filter(p=>weekKey(p.date)===w));
     const uc=!s.unitsKnown?"u-flat":(s.units>0?"u-pos":s.units<0?"u-neg":"u-flat");
     const u=!s.unitsKnown?"—":fmtU(s.units)+"u";
-    return `<button class="wk-card" data-w="${w}"><div class="wk-n">Week ${w}</div>
+    return `<button class="wk-card" data-w="${w}"><div class="wk-n">${weekLabel(w)}</div>
       <div class="wk-rec"><span>${recStr(s)}</span><span>${s.hit==null?"—":s.hit.toFixed(0)+"%"}</span><span class="${uc}">${u}</span></div>
       <div class="wk-open">${s.n} picks${s.pending?" · "+s.pending+" pending":""} — open →</div></button>`;
   }).join("");
@@ -400,8 +402,8 @@ async function initLive(){
 }
 
 /* wiring */
-$("#weektabs").addEventListener("click",e=>{const b=e.target.closest(".wtab");if(!b)return; state.view=b.dataset.w==="overall"?"overall":+b.dataset.w; render();});
-$("#weekbreak").addEventListener("click",e=>{const b=e.target.closest(".wk-card");if(!b)return; state.view=+b.dataset.w; render();});
+$("#weektabs").addEventListener("click",e=>{const b=e.target.closest(".wtab");if(!b)return; state.view=b.dataset.w; render();});
+$("#weekbreak").addEventListener("click",e=>{const b=e.target.closest(".wk-card");if(!b)return; state.view=b.dataset.w; render();});
 function wire(groupId,key){
   document.querySelectorAll("#"+groupId+" .fbtn").forEach(b=>b.addEventListener("click",()=>{
     document.querySelectorAll("#"+groupId+" .fbtn").forEach(x=>x.classList.remove("on"));
