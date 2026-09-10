@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Bet Analysis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,6 +144,26 @@
   .cue{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.02em;color:var(--model-ink);
     background:var(--model-soft);border:1px solid color-mix(in srgb,var(--model) 25%,transparent);
     padding:1px 6px;border-radius:5px}
+  /* --- situational layer --- */
+  .sit{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+  .sbadge{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.02em;padding:1px 6px;border-radius:5px;
+    border:1px solid var(--border-2);color:var(--ink-2);background:var(--surface-2);white-space:nowrap}
+  .sbadge.up{color:var(--pos);border-color:color-mix(in srgb,var(--pos) 32%,transparent);background:color-mix(in srgb,var(--pos) 9%,transparent)}
+  .sbadge.dn{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 32%,transparent);background:color-mix(in srgb,var(--neg) 9%,transparent)}
+  .sbadge.wn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 32%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent)}
+  .mv-line{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+  .mv-line b{color:var(--ink-2);font-weight:600}
+  .sit-wrap{flex-basis:100%;border-top:1px solid var(--border);padding-top:12px;margin-top:2px}
+  .an-h{font-family:var(--f-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 2px;font-weight:500}
+  .sit-tbl{border-collapse:collapse;font-size:12px;margin-top:6px;width:100%}
+  .sit-tbl td{padding:6px 14px 6px 0;font-size:12.5px;color:var(--ink-2);line-height:1.5;
+    border-bottom:1px solid var(--border);vertical-align:top}
+  .sit-tbl tr:last-child td{border-bottom:none}
+  .sit-tbl td.f{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-3);white-space:nowrap;width:1%;padding-top:8px}
+  .sit-n{font-family:var(--f-mono);font-size:10px;color:var(--ink-3)}
+  .sit-soon{font-family:var(--f-mono);font-size:10px;color:var(--ink-3);margin-top:10px;line-height:1.65}
   .tv{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:11px;
     font-weight:600;color:var(--ink);background:var(--surface-2);border:1px solid var(--border-2);
     padding:3px 9px;border-radius:6px;white-space:nowrap}
@@ -529,9 +550,90 @@
     return '<div class="sig '+(flagged?'on '+kind:'')+'">'+dot+label+' '+(flagged?'SOFT':'ok')+' <b>'+(gap!=null?gap.toFixed(1):'\u2013')+'</b></div>';
   }
   function confPill(v){const cl=v>=62?'hi':(v>=55?'mid':'lo');return '<span class="conf '+cl+'">'+v+'%</span>';}
+  // ---- Situational layer ---------------------------------------------------
+  // CONTEXT AND FLAGS ONLY. Nothing here touches the projected margin or the
+  // pick. Each factor reads g.sit and renders nothing when its data is absent,
+  // so new factors can be added to the slate without touching this file.
+  //   g.sit.mv = [[date, spread, total], ...]  oldest first; [0] is the open
+  //   g.sit.la = {a:[nextOpponent, ratingDelta], h:[...]}   look-ahead
+  // Planned slots: tr (travel), inj (injuries), ref (crew), rz, to, ypp.
+  const LA_TH=10; // next opponent this many rating pts stronger = look-ahead spot
+  const SIT_SOON="Coming as the season banks games: travel distance · injuries · referee crew + penalty rate · red zone · turnover margin · yards per pass and rush (and allowed).";
+  function mv(g){
+    const s=g.sit&&g.sit.mv;
+    if(!s||!s.length) return null;
+    const openS=s[0][1], openT=s[0][2];
+    const dS=(has(openS)&&has(g.sar))?Math.round((g.sar-openS)*10)/10:null;
+    const dT=(has(openT)&&has(g.total))?Math.round((g.total-openT)*10)/10:null;
+    return {openS:openS,openT:openT,dS:dS,dT:dT,n:s.length,at:s[0][0]};
+  }
+  // Spreads are stored fav-relative and negative, so a MORE negative number
+  // means the market moved toward the favorite.
+  function mvLine(g){
+    const m=mv(g); if(!m) return "";
+    if(bet==="total"){
+      if(m.dT===null||Math.abs(m.dT)<0.5) return "";
+      return '<span class="mv-line">open '+m.openT.toFixed(1)+' → <b>'+(m.dT>0?"+":"")+m.dT.toFixed(1)+'</b></span>';
+    }
+    if(m.dS===null||Math.abs(m.dS)<0.5) return "";
+    return '<span class="mv-line">open '+fmt(m.openS)+' → <b>'+(m.dS<0?"↓":"↑")+Math.abs(m.dS).toFixed(1)+'</b></span>';
+  }
+  function sitBadges(g){
+    const out=[], m=mv(g);
+    if(m&&m.dS!==null&&Math.abs(m.dS)>=0.5){
+      const toFav=m.dS<0;
+      out.push('<span class="sbadge '+(toFav?"dn":"up")+'">'+(toFav?"↓":"↑")+" "+Math.abs(m.dS).toFixed(1)+" "+(toFav?g.fav:g.dog)+'</span>');
+    }
+    if(m&&m.dT!==null&&Math.abs(m.dT)>=1){
+      out.push('<span class="sbadge">total '+(m.dT>0?"+":"")+m.dT.toFixed(1)+'</span>');
+    }
+    const la=g.sit&&g.sit.la;
+    if(la){["a","h"].forEach(function(side){
+      const v=la[side];
+      if(v&&v[1]>=LA_TH) out.push('<span class="sbadge wn">⚠ '+(side==="a"?g.away:g.home)+' looks ahead</span>');
+    });}
+    return out.length?'<div class="sit">'+out.join("")+'</div>':"";
+  }
+  function sitRows(g){
+    const rows=[], m=mv(g);
+    if(m){
+      const parts=[];
+      if(m.dS!==null){
+        const moved=Math.abs(m.dS)>=0.5;
+        parts.push("Spread opened <b>"+g.fav+" "+fmt(m.openS)+"</b> and sits at <b>"+fmt(g.sar)+"</b> — "
+          +(moved?Math.abs(m.dS).toFixed(1)+" pt toward <b>"+(m.dS<0?g.fav:g.dog)+"</b>.":"no move."));
+      }
+      if(m.dT!==null){
+        const movedT=Math.abs(m.dT)>=0.5;
+        parts.push("Total opened <b>"+m.openT.toFixed(1)+"</b>, now <b>"+g.total.toFixed(1)+"</b>"
+          +(movedT?" ("+(m.dT>0?"+":"")+m.dT.toFixed(1)+").":" (flat)."));
+      }
+      rows.push(["Line movement",parts.join(" ")+' <span class="sit-n">· '+m.n+" snapshot"+(m.n>1?"s":"")+" since "+m.at+"</span>"]);
+    }
+    const la=g.sit&&g.sit.la;
+    if(la){
+      const bits=[];
+      ["a","h"].forEach(function(side){
+        const v=la[side]; if(!v) return;
+        const tm=(side==="a"?g.away:g.home);
+        bits.push("<b>"+tm+"</b> plays "+v[0]+" next — "
+          +(v[1]>=LA_TH?"a real step up in class, so this is a look-ahead spot.":"no step up in class."));
+      });
+      if(bits.length) rows.push(["Look-ahead",bits.join(" ")]);
+    }
+    return rows;
+  }
+  function sitBlock(g){
+    const rows=sitRows(g);
+    const body=rows.length
+      ? '<table class="sit-tbl"><tbody>'+rows.map(function(r){return '<tr><td class="f">'+r[0]+'</td><td>'+r[1]+'</td></tr>';}).join("")+'</tbody></table>'
+      : '<p class="an-prof">No situational data loaded for this game yet.</p>';
+    return '<div class="sit-wrap"><p class="an-h">Situational — context only, does not move the projection</p>'+body
+      +'<div class="sit-soon">'+SIT_SOON+'</div></div>';
+  }
   function analysis(g,c){
     if(g.fOff==null||g.dOff==null){
-      return '<div class="an"><div class="an-note"><b>'+g.dog+'</b> is an FCS / unrated opponent — no SP+ profile to model. <b>'+g.fav+'</b> is a heavy favorite; this is a get-the-starters-out spot where the spread is about garbage time, not a matchup. The stats model sits it out — any bet here is a total or a moneyline, not a read on who is better.</div></div>';
+      return '<div class="an"><div class="an-note"><b>'+g.dog+'</b> is an FCS / unrated opponent — no SP+ profile to model. <b>'+g.fav+'</b> is a heavy favorite; this is a get-the-starters-out spot where the spread is about garbage time, not a matchup. The stats model sits it out — any bet here is a total or a moneyline, not a read on who is better.</div>'+sitBlock(g)+'</div>';
     }
     const favIsHome=(g.home===g.fav);
     const awayWho=favIsHome?'d':'f', homeWho=favIsHome?'f':'d';
@@ -564,7 +666,7 @@
       return g.fav+' wants it '+(favPass?'through the air':'on the ground')+' ('+favStr.toFixed(2)+' PPA), and '+g.dog+'’s defense is softer '+(dogSoftPass?'against the pass':'against the run')+'. '+(align?'<b>That matchup favors '+g.fav+'.</b>':'But that’s '+g.dog+'’s sturdier side, so it’s not a clean lane for '+g.fav+'.');
     })();
     const proj=g.model, p=pick(g,c);
-    const projTxt=(g.lg==="NFL"?"The model projects <b>":"SP+ projects <b>")+g.fav+' by '+Math.abs(proj).toFixed(1)+'</b> with home field; Saracen’s line is <b>'+g.fav+' '+fmt(g.sar)+'</b>.';
+    const projTxt=(g.lg==="NFL"?"The model projects <b>":"SP+ projects <b>")+g.fav+' by '+Math.abs(proj).toFixed(1)+'</b> with home field; the market line is <b>'+g.fav+' '+fmt(g.sar)+'</b>.';
     const verdict='<b>Against the spread:</b> '+p.txt.replace(/^Bet /,'').replace(/ on the spread/,'');
     let totalTxt='';
     if(g.tModel!=null&&has(g.total)){
@@ -580,7 +682,7 @@
       +'<p>'+projTxt+'</p>'
       +'<p>'+verdict+'</p>'
       +(totalTxt?'<p>'+totalTxt+'</p>':'')
-      +'</div></div>';
+      +'</div>'+sitBlock(g)+'</div>';
   }
   function totalPick(g){
     const proj=g.tModel, line=g.total;
@@ -597,11 +699,12 @@
       return '<div class="lines"><span class="mkt-line"><span class="ll">ML</span> '+(ml==null?"\u2014":(ml>0?"+"+ml:ml))+'</span><span class="mkt-line"><span class="ll">Spread</span> '+g.fav+' '+fmt(g.sar)+'</span></div>';
     }
     if(bet==="total"){
-      return '<div class="lines"><span class="mkt-line"><span class="ll">Line</span> '+(has(g.total)?g.total.toFixed(1):"—")+'</span><span class="mkt-line"><span class="ll">Proj</span> '+(g.tModel==null?"—":g.tModel.toFixed(1))+'</span></div>';
+      return '<div class="lines"><span class="mkt-line"><span class="ll">Line</span> '+(has(g.total)?g.total.toFixed(1):"—")+'</span><span class="mkt-line"><span class="ll">Proj</span> '+(g.tModel==null?"—":g.tModel.toFixed(1))+'</span>'+mvLine(g)+'</div>';
     }
     return '<div class="lines">'
       +(c.hasCons?'<span class="mkt-line"><span class="ll">Mkt</span> '+g.fav+' '+fmt(c.cons)+'</span>':'<span class="mkt-line pend"><span class="ll">Mkt</span> —</span>')
       +'<div class="sar-line"><span class="ll">Sar</span><input class="sar-in" data-i="'+g.__i+'" inputmode="decimal" value="'+(has(g.sarEdit)?g.sarEdit:"")+'" placeholder="—" aria-label="Saracen spread"><span class="ll">'+g.fav+'</span></div>'
+      +mvLine(g)
       +'</div>';
   }
   function signalsCell(g,c){
@@ -752,11 +855,12 @@
     rowsEl.innerHTML=list.map((x,idx)=>{
       const g=x.g,c=x.c,p=getp(g,c);
       const cuesHtml=g.cues&&g.cues.length?'<div class="cues">'+g.cues.map(k=>'<span class="cue">'+CUE_LABEL[k]+'</span>').join("")+'</div>':"";
+      const sitHtml=sitBadges(g);
       const tvHtml=g.tv?'<span class="tv">📺 '+g.tv+'</span>':'<span class="tv-pend">— feed —</span>';
       return '<tr>'+
         '<td class="rank">'+(idx+1)+'</td>'+
         '<td><div class="game"><span class="teams">'+g.away+'<span class="at">@</span>'+g.home+'</span>'+
-          '<span class="gmeta"><span class="lg '+g.lg+'">'+g.lg+'</span><span class="kick">'+g.kick+'</span></span>'+cuesHtml+
+          '<span class="gmeta"><span class="lg '+g.lg+'">'+g.lg+'</span><span class="kick">'+g.kick+'</span></span>'+cuesHtml+sitHtml+
           '<button class="an-toggle" type="button">▸ analysis</button></div></td>'+
         '<td>'+tvHtml+'</td>'+
         '<td class="numcell">'+linesCell(g,c)+'</td>'+
@@ -804,7 +908,7 @@
   });
 
   fetch("./slate.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{
-    GAMES=(d.g||[]).map(a=>({lg:a[0],away:a[1],home:a[2],fav:a[3]?a[2]:a[1],dog:a[3]?a[1]:a[2],kick:a[4],day:a[5],ko:a[6],sar:a[7],cons:a[7],total:a[8],mlFav:a[9],model:a[10],tModel:a[11],fOff:a[12],fOffR:a[13],fDef:a[14],fDefR:a[15],dOff:a[16],dOffR:a[17],dDef:a[18],dDefR:a[19],tv:null,cues:a[20]?["marquee"]:[],advF:null,advD:null}));
+    GAMES=(d.g||[]).map(a=>({lg:a[0],away:a[1],home:a[2],fav:a[3]?a[2]:a[1],dog:a[3]?a[1]:a[2],kick:a[4],day:a[5],ko:a[6],sar:a[7],cons:a[7],total:a[8],mlFav:a[9],model:a[10],tModel:a[11],fOff:a[12],fOffR:a[13],fDef:a[14],fDefR:a[15],dOff:a[16],dOffR:a[17],dDef:a[18],dDefR:a[19],tv:null,cues:a[20]?["marquee"]:[],sit:a[21]||{},advF:null,advD:null}));
     initGames();
     $("#stamp").textContent=(d.stamp||"slate")+" — lines via The Odds API";
     render();
