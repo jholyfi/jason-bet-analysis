@@ -557,7 +557,8 @@
   //   g.sit.mv = [[date, spread, total], ...]  oldest first; [0] is the open
   //   g.sit.la = {a:[nextOpponent, ratingDelta], h:[...]}   look-ahead
   // Planned slots: tr (travel), inj (injuries), ref (crew), rz, to, ypp.
-  const LA_TH=10; // next opponent this many rating pts stronger = look-ahead spot
+  const LA_TH=10;     // next opponent must be this many rating pts stronger than this week’s
+  const LA_STRONG=8;  // ...AND be this strong outright, so cupcake-then-anybody stops flagging
   const SIT_SOON="Coming as the season banks games: travel distance · injuries · referee crew + penalty rate · red zone · turnover margin · yards per pass and rush (and allowed).";
   function mv(g){
     const s=g.sit&&g.sit.mv;
@@ -590,7 +591,7 @@
     const la=g.sit&&g.sit.la;
     if(la){["a","h"].forEach(function(side){
       const v=la[side];
-      if(v&&v[1]>=LA_TH) out.push('<span class="sbadge wn">⚠ '+(side==="a"?g.away:g.home)+' looks ahead</span>');
+      if(v&&v[1]>=LA_TH&&v[2]>=LA_STRONG) out.push('<span class="sbadge wn">⚠ '+(side==="a"?g.away:g.home)+' looks ahead</span>');
     });}
     return out.length?'<div class="sit">'+out.join("")+'</div>':"";
   }
@@ -616,8 +617,11 @@
       ["a","h"].forEach(function(side){
         const v=la[side]; if(!v) return;
         const tm=(side==="a"?g.away:g.home);
+        const stepUp=v[1]>=LA_TH, strong=v[2]>=LA_STRONG;
         bits.push("<b>"+tm+"</b> plays "+v[0]+" next — "
-          +(v[1]>=LA_TH?"a real step up in class, so this is a look-ahead spot.":"no step up in class."));
+          +(stepUp&&strong ? "a real step up in class, so this is a look-ahead spot."
+            : stepUp ? "a step up from this week, but not a strong opponent outright."
+            : "no step up in class."));
       });
       if(bits.length) rows.push(["Look-ahead",bits.join(" ")]);
     }

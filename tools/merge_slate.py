@@ -18,7 +18,7 @@ Rules
 """
 import json, sys, argparse, datetime
 
-SPREAD, TOTAL, KO, SIT = 7, 8, 6, 21
+SPREAD, TOTAL, KO, MARQUEE, SIT = 7, 8, 6, 20, 21
 
 def key(a): return (a[0], a[1], a[2])
 
@@ -39,16 +39,23 @@ def main():
     for a in new["g"]:
         while len(a) < SIT: a.append(None)
         prev = old.get(key(a))
+        incoming = a[SIT] if len(a) > SIT and isinstance(a[SIT], dict) else {}
         if prev and len(prev) > SIT and isinstance(prev[SIT], dict):
-            sit = dict(prev[SIT])
-            mv = list(sit.get("mv") or [])
+            # Start from the NEW pull's factors (la, and future ones), then
+            # graft the old movement history back on so the open survives.
+            sit = dict(incoming)
+            mv = list((prev[SIT] or {}).get("mv") or [])
             if not mv or mv[-1][1] != a[SPREAD] or mv[-1][2] != a[TOTAL]:
                 mv.append([args.date, a[SPREAD], a[TOTAL]])
                 moved += 1
             sit["mv"] = mv
             carried += 1
+            # marquee is a property of the matchup, not of the pull
+            if not a[MARQUEE] and prev[MARQUEE]:
+                a[MARQUEE] = prev[MARQUEE]
         else:
-            sit = {"mv": [[args.date, a[SPREAD], a[TOTAL]]]}
+            sit = dict(incoming)
+            sit["mv"] = [[args.date, a[SPREAD], a[TOTAL]]]
             added += 1
         if len(a) == SIT: a.append(sit)
         else: a[SIT] = sit
