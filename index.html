@@ -46,7 +46,9 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);
     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1180px;margin:0 auto;padding:22px 20px 64px}
+  .wrap{max-width:min(1720px,96vw);margin:0 auto;padding:22px 20px 64px}
+  /* keep long-form reading blocks from stretching across a very wide screen */
+  .brand .sub{max-width:52ch}
 
   header.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 22px;
     padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:20px}
@@ -116,7 +118,14 @@
 
   .board{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
     box-shadow:var(--shadow);overflow:hidden}
-  .board-scroll{overflow-x:auto}
+  .board-scroll{overflow-x:auto;scrollbar-width:thin}
+  /* a second, always-reachable scrollbar pinned to the bottom of the screen,
+     shown only when the table is actually wider than its container */
+  .hscroll{position:sticky;bottom:0;z-index:3;overflow-x:auto;overflow-y:hidden;
+    height:14px;scrollbar-width:thin;background:var(--surface);
+    border-top:1px solid var(--border)}
+  .hscroll > div{height:1px}
+  .hscroll[hidden]{display:none!important}
   table{width:100%;border-collapse:collapse;min-width:1000px}
   thead th{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;
     text-transform:uppercase;color:var(--ink-3);font-weight:500;text-align:left;
@@ -237,7 +246,7 @@
   .sig.on .sig-dot{opacity:1}
   .sig.on.market{color:var(--market-ink)} .sig.on.model{color:var(--model-ink)}
   .sig b{font-variant-numeric:tabular-nums;font-weight:600}
-  .bet{font-size:13px;line-height:1.42;color:var(--ink);max-width:33ch;min-width:200px}
+  .bet{font-size:13px;line-height:1.42;color:var(--ink);max-width:44ch;min-width:200px}
   .bet.na{color:var(--ink-3)} .bet.skip{color:var(--model-ink)} .bet.ml{color:var(--ink-2)}
   .bet b{font-weight:600}
   .conf{display:inline-block;font-family:var(--f-mono);font-weight:600;font-size:14px;padding:5px 11px;border-radius:20px;font-variant-numeric:tabular-nums}
@@ -362,7 +371,7 @@
   <div class="movednote" id="movedNote" hidden></div>
 
   <div class="board">
-    <div class="board-scroll">
+    <div class="board-scroll" id="boardScroll">
       <table>
         <thead>
           <tr>
@@ -378,6 +387,7 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
+    <div class="hscroll" id="hscroll" hidden aria-hidden="true"><div></div></div>
   </div>
 
   <div class="propsview" id="propsView" hidden></div>
@@ -874,6 +884,7 @@
       '</tr>'+
       '<tr class="detail" hidden><td colspan="7">'+analysis(g,c)+'</td></tr>';
     }).join("");
+    if(window.SYNC_HSCROLL) window.SYNC_HSCROLL();
   }
 
   rowsEl.addEventListener("input",e=>{
@@ -887,6 +898,24 @@
     renderKpis(viewGames());
   });
   rowsEl.addEventListener("change",render);
+
+  // Keep the pinned bottom scrollbar in sync with the table's own scroller.
+  (function(){
+    const sc=document.getElementById("boardScroll"), hs=document.getElementById("hscroll");
+    if(!sc||!hs) return;
+    const inner=hs.firstElementChild;
+    let lock=false;
+    function sync(){
+      const over=sc.scrollWidth-sc.clientWidth;
+      hs.hidden = over<=1;
+      inner.style.width=sc.scrollWidth+"px";
+    }
+    sc.addEventListener("scroll",()=>{if(lock)return;lock=true;hs.scrollLeft=sc.scrollLeft;lock=false;});
+    hs.addEventListener("scroll",()=>{if(lock)return;lock=true;sc.scrollLeft=hs.scrollLeft;lock=false;});
+    window.addEventListener("resize",sync);
+    window.SYNC_HSCROLL=sync;
+    sync();
+  })();
   rowsEl.addEventListener("click",e=>{const b=e.target.closest(".an-toggle");if(!b)return;const d=b.closest("tr").nextElementSibling;if(d&&d.classList.contains("detail")){d.hidden=!d.hidden;b.textContent=(d.hidden?"\u25b8":"\u25be")+" analysis";}});
 
   $("#leagueSeg").addEventListener("click",e=>{const b=e.target.closest("button[data-lg]");if(!b)return;
