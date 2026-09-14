@@ -431,6 +431,10 @@
   ];
   const CUE_LABEL={marquee:"marquee",recency:"recency bias",rivalry:"rivalry/revenge",primetime:"primetime"};
   const TH={spread:{market:1.0,model:1.5,scale:6},total:{edge:2.0}};
+  // Moneyline value floor: any favorite priced at or worse than this is dropped
+  // as "No value bet" — too much risk for too little return. Was -1000; Jason
+  // tightened it to -500 on 2026-09-14.
+  const ML_FLOOR=-500;
   // Model engine — projected home spread from power ratings. Computes when SP+/EPA ratings load.
   const HFA=2.4; // home-field advantage, points (CFB ~2.4). Neutral-site games: set g.neutral=true
   const MODEL_W=0.4; // early-season fade (Week 1-2): trust SP+ less now, ramp toward 1.0 by ~Week 5
@@ -489,12 +493,12 @@
     if(bet==="ml"){
       let val=0,chalk=0,best=null;
       inView.forEach(g=>{const c=compute(g),p=mlPick(g,c);
-        if(g.mlFav!=null&&g.mlFav<=-1000){chalk++;}
+        if(g.mlFav!=null&&g.mlFav<=ML_FLOOR){chalk++;}
         else if(p.cls==="ml"&&g.mlFav!=null){val++; if(!best||p.conf>best.conf)best={conf:p.conf,team:p.pillTeam};}});
       kpiEl.innerHTML=
         tile("","Games on board",inView.length,lgNote)+
         tile("model","Value MLs",val,"priced, worth it")+
-        tile("","Too chalky",chalk,"-1000 or worse")+
+        tile("","Too chalky",chalk,ML_FLOOR+" or worse")+
         tile("edge","Top winner",best?best.conf+"%":"—",best?best.team:"add ML prices");
       return;
     }
@@ -542,8 +546,8 @@
     const margin=hasM?(-model):absS;
     const conf=Math.max(52,Math.min(97,Math.round(nprob(margin/13.5)*100)));
     const ml=g.mlFav;
-    if(ml==null||ml<=-1000){
-      return {txt:"<b>No value bet</b> — the model likes "+g.fav+", but the moneyline is −1000 or worse, so there’s no value laying it. (Check the Total tab for a play here.)",conf:null,cls:"na",pillTeam:"No value",edge:0};
+    if(ml==null||ml<=ML_FLOOR){
+      return {txt:"<b>No value bet</b> — the model likes "+g.fav+", but the moneyline is "+ML_FLOOR+" or worse, so there’s no value laying it. (Check the Total tab for a play here.)",conf:null,cls:"na",pillTeam:"No value",edge:0};
     }
     const oddsStr=(ml>0?"+":"")+ml;
     const small=absS>=14?" It’s a heavy favorite, so the payout is small.":"";
@@ -740,8 +744,8 @@
     if(ml==null){
       return {txt:"Model likes <b>"+g.fav+"</b> to win (~"+conf+"% win prob) \u2014 no moneyline price captured; check your book for the number.",conf:conf,cls:"ml",pillTeam:g.fav+" ML",edge:0};
     }
-    if(ml<=-1000){
-      return {txt:"<b>No value bet</b> \u2014 "+g.fav+" should win, but the moneyline is "+ml+" (-1000 or worse); you\u2019d risk too much to win too little. (Check the Total tab for a play here.)",conf:null,cls:"na",pillTeam:"No value",edge:0};
+    if(ml<=ML_FLOOR){
+      return {txt:"<b>No value bet</b> \u2014 "+g.fav+" should win, but the moneyline is "+ml+" ("+ML_FLOOR+" or worse); you\u2019d risk too much to win too little. (Check the Total tab for a play here.)",conf:null,cls:"na",pillTeam:"No value",edge:0};
     }
     const oddsStr=(ml>0?"+":"")+ml;
     const small=(absS!=null&&absS>=14)?" It\u2019s a heavy favorite, so the payout is small.":"";
